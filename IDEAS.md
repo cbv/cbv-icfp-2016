@@ -20,7 +20,7 @@ Hard Problems:
 Research
 ========
 - http://erikdemaine.org/papers/CGTA2000/paper.pdf
-  - three general polynomial-time algorithms form strips of unlimited length, not immediately & obviously applicable to our case with a fixed square
+  - three general polynomial-time algorithms from strips of unlimited length, not a fixed square
     * the ring method (second one) could potentially be directly applicable
   - a subroutine for convex polygons (Fig 2 & Theorem 2)
     * we should probably implement this. the example can be solved by this algorithm immediately.
