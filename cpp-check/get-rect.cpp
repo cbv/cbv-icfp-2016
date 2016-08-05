@@ -139,13 +139,19 @@ int main(int argc, char **argv) {
 			auto const &b = hull[(e+1)%hull.size()];
 			K::Vector_2 dir(b-a);
 			CGAL::Gmpq len2 = dir * dir;
+			CGAL::Gmpz num2 = len2.numerator();
+			CGAL::Gmpz den2 = len2.denominator();
 			mpz_t num,den;
-			if (mpz_root(num, len2.numerator().mpz(), 2) != 0 && mpz_root(den, len2.denominator().mpz(), 2)) {
+			mpz_init(num);
+			mpz_init(den);
+			if (mpz_root(num, num2.mpz(), 2) != 0 && mpz_root(den, den2.mpz(), 2)) {
 				x_dirs.emplace_back((dir / CGAL::Gmpz(num)) * CGAL::Gmpz(den));
 				++added;
 			} else {
 				++skipped;
 			}
+			mpz_clear(num);
+			mpz_clear(den);
 		}
 		std::cout << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
 	}
