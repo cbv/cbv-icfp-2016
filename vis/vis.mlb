@@ -3,5 +3,6 @@ $(SML_LIB)/basis/mlton.mlb
 
 x/graphics.mlb
 ../parse.sml
+../rat.sml
 
 vis.sml
