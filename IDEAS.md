@@ -29,8 +29,9 @@ Research
 Computational Geomotry
 ======================
 - Rational numbers (built-in/libraries available in most languages)
-- Mirror, line intersection
-- Clockwise or not? See https://en.wikipedia.org/wiki/Shoelace_formula
+- 2D vector operations
+- Mirroring, line intersection, union of multiple polygons
+  * Clockwise or not? See Shoelace's formula https://en.wikipedia.org/wiki/Shoelace_formula
 
 Other Properties
 ================
