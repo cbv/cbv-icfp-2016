@@ -111,3 +111,5 @@ fun parse (str:string):problem =
   in
     (silly, skelly)
   end
+
+val load = parse o TextIO.inputAll o TextIO.openIn
