@@ -1,4 +1,5 @@
 .*.swp
 cpp-check/check
+cpp-check/get-rect
 cpp-check/objs
 *.dSYM
