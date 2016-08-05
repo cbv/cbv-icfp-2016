@@ -1,0 +1,18 @@
+Approximate Solutions:
+----------------------
+- "translate the square to cover the silhouette"
+
+- Approximate by folding on all edges of the convex hull of the silhouette (repeatedly).
+
+
+Exact Solutions that are probably slow:
+---------------------------------------
+- Exact search: unwrap faces from skeleton.
+
+- Will skeleton be provided as hint with all solutions?
+
+
+Hard Problems:
+--------------
+- lots of small faces during search
+- use really long (greater than 64 bits) integers
