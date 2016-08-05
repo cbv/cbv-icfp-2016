@@ -5,6 +5,10 @@ import time
 import os
 import sys
 
+if len(sys.argv) < 2:
+    print "Usage: pull.py <snapshot_hash>"
+    exit(1)
+
 snapshot = sys.argv[1] #"5316e3b9d3224e6ef99a5220e8f3dcab5e58bb0d"
 api_key = "129-7af108ba768db1f95140f91e3c4d34e4"
 
