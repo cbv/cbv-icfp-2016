@@ -1,2 +1,4 @@
 .*.swp
 cpp-check/check
+cpp-check/objs
+*.dSYM

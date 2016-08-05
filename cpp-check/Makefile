@@ -15,5 +15,11 @@ endif
 
 all : check
 
-check : check.cpp
-	$(CPP) check.cpp -o $@ -lgmp -lCGAL
+objs :
+	mkdir -p objs
+
+objs/%.o : %.cpp structures.hpp | objs
+	$(CPP) -c $< -o $@
+
+check : objs/check.o objs/structures.o
+	$(CPP) $^ -o $@ -lgmp -lCGAL
