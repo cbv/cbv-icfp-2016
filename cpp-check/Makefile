@@ -4,7 +4,6 @@
 UNAME := $(shell uname)
 
 ifeq ($(UNAME),Darwin)
-	#Appologies -- I haven't actually tested this:
 	CPP=clang++ -std=c++11 -Wall -Werror -g
 endif
 
