@@ -20,9 +20,10 @@ Hard Problems:
 Research
 ========
 - http://erikdemaine.org/papers/CGTA2000/paper.pdf
-  - polynomial-time positive results if scale doesn't matter
+  - polynomial-time positive results by using strips
+  - not directly applicable to our case
   - three different algorithms, skeleton is optional (at least in some algorithms)
-  - very simple cases that we should implement:
+  - very simple cases that we should probably implement:
     * convex: hiding algorithm shown as Fig 2 or Theorem 2
 
 Computational Geomotry
