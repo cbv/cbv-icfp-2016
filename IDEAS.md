@@ -20,11 +20,10 @@ Hard Problems:
 Research
 ========
 - http://erikdemaine.org/papers/CGTA2000/paper.pdf
-  - polynomial-time positive results by using strips
-  - not directly applicable to our case
-  - three different algorithms, skeleton is optional (at least in some algorithms)
-  - very simple cases that we should probably implement:
-    * convex: hiding algorithm shown as Fig 2 or Theorem 2
+  - three general polynomial-time algorithms form strips of unlimited length, not immediately & obviously applicable to our case with a fixed square
+    * the ring method (second one) could potentially be directly applicable
+  - a subroutine for convex polygons (Fig 2 & Theorem 2)
+    * we should probably implement this. the example can be solved by this algorithm immediately.
 
 Computational Geomotry
 ======================
