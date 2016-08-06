@@ -199,12 +199,17 @@ val sol2 =
 
 val which = sol2
 
-val is = Int32.toString o i
+fun i32s (n : Int32.int) =
+ if Int32.<(n, (0: Int32.int)) then "-" ^ Int32.toString(Int32.~ n)
+ else Int32.toString n
+
+val is = i32s o i
 
 fun rat_to_string (n,d) =
     case d of
 	1 => is n
       | _ => is n ^ "/" ^ is d
+
 
 fun point_to_string (r1,r2) = rat_to_string r1 ^ "," ^ rat_to_string r2
 
@@ -212,10 +217,10 @@ fun points_to_string s =
     List.map point_to_string s |> String.concatWith "\n"
 
 fun source_points_to_string s =
-    Int32.toString (List.length s) ^ "\n" ^ points_to_string s
+    i32s (List.length s) ^ "\n" ^ points_to_string s
 
 fun facet_to_string f =
-    List.map Int32.toString f |> String.concatWith " "
+    (List.map i32s (List.length f :: f)) |> String.concatWith " "
 
 fun facets_to_string f =
     Int32.toString (List.length f) ^ "\n" ^ (List.map facet_to_string f |> String.concatWith "\n")
