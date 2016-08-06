@@ -189,9 +189,15 @@ val sol1 =
 |> fold_sol ((0,1),(3,4))
 |> fold_sol ((1,1),(1,2))
 |> fold_sol ((~1,1),(3,2))
+
+val sol2 =
+  startsol
+|> fold_sol ((1,2), (1,4))
 (*val _ = draw_sol startsol*)
 (* val _ = draw_sol (fold_sol ((0, 1), (1, 2)) startsol)*)
 
+
+val which = sol2
 
 val is = Int32.toString o i
 
@@ -207,7 +213,7 @@ fun points_to_string s =
 
 fun source_points_to_string s =
     Int32.toString (List.length s) ^ "\n" ^ points_to_string s
- 
+
 fun facet_to_string f =
     List.map Int32.toString f |> String.concatWith " "
 
@@ -220,10 +226,9 @@ fun sol_to_string ((s,f,ds):sol) =
 fun print_sol ((s,f,ds): sol) =
     print ("******* SOLUTION STARTS HERE *********\n" ^ sol_to_string (s,f,ds) ^ "\n******* SOLUTION ENDS HERE *********\n" )
 
+val _ = draw_sol which
 
-val _ = draw_sol sol1
-
-val _ = print_sol sol0
+val _ = print_sol which
 
 fun loop () = (MLX.usleep 1000; loop ())
 
