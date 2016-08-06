@@ -13,10 +13,10 @@ ifeq ($(UNAME),Linux)
 	SDL_LIBS=-lSDL2 -lGL
 endif
 
-all : check get-rect get-convex foldup show
+all : check get-convex foldup show
 
 clean :
-	rm -f check get-rect get-convex foldup show
+	rm -f check get-convex foldup show
 	rm -rf objs
 
 objs :
@@ -29,8 +29,8 @@ objs/%.o : %.cpp ${HEADERS} | objs
 check : objs/check.o objs/utils.o objs/structures.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
-get-rect : objs/get-rect.o objs/utils.o objs/structures.o objs/rotations.o
-	$(CPP) $^ -o $@ -lgmp -lCGAL
+#get-rect : objs/get-rect.o objs/utils.o objs/structures.o objs/rotations.o
+#	$(CPP) $^ -o $@ -lgmp -lCGAL
 
 get-convex : objs/get-convex.o objs/utils.o objs/structures.o objs/rotations.o objs/folders.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
