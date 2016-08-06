@@ -16,6 +16,16 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	struct SearchEdge {
+		K::Segment_2 seg;
+		uint32_t left = -1U, right = -1U;
+	};
+	struct SearchFace : std::vector< SearchEdge > {
+		CGAL::Gmpq area;
+	};
+	std::vector< SearchEdge > edges;
+	std::vector< SearchFace > faces;
+
 	{ //okay, first make an arrangement to extract facets from skeleton:
 		struct Merge {
 			int32_t operator()(int32_t a, int32_t b) {
@@ -112,6 +122,63 @@ int main(int argc, char **argv) {
 		}
 		std::cout << "Have " << inside << " inside faces and " << outside << " outside faces." << std::endl;
 
+		//clear edge markings (will use to store indices):
+		for (auto e = arr.edges_begin(); e != arr.edges_end(); ++e) {
+			e->set_data(-1);
+		}
+
+		//now add edges and faces into 'edges' and 'faces' arrays:
+		edges.reserve(arr.number_of_edges());
+		faces.reserve(inside);
+		for (auto f = arr.faces_begin(); f != arr.faces_end(); ++f) {
+			if (f->data() == -1) {
+				//skip outside faces
+				continue;
+			}
+
+			assert(f->data() == 1 && "Face should be marked as inner.");
+			assert(!f->is_unbounded() && "Inner faces should be bounded.");
+			assert(f->holes_begin() == f->holes_end() && "Facets with holes shouldn't happen.");
+
+			f->data() = faces.size();
+			faces.emplace_back();
+
+
+			auto he = f->outer_ccb();
+				do {
+					auto other_face = he->twin()->face();
+
+					int32_t other_mark;
+
+					if ((he->curve().data() & 1)) {
+						//boundary
+						other_mark = (f->data() == 1 ? -1 : 1);
+					} else {
+						other_mark = f->data();
+					}
+
+					if (other_face->data() == 0) {
+						arr.non_const_handle(other_face)->set_data(other_mark);
+						to_visit.push_back(other_face);
+					} else {
+						if (other_face->data() != other_mark) {
+							std::cerr << "Weirdly enough, got conflicting marks for a face. Is the boundary reasonable?" << std::endl;
+						}
+					}
+
+					++he;
+				} while (he != start);
+				
+			};
+
+			if (!f->is_unbounded()) {
+				do_ccb(f->outer_ccb());
+			}
+
+			for (Arrangement_2::Hole_const_iterator h = f->holes_begin(); h != f->holes_end(); ++h) {
+				do_ccb(*h);
+			}
+		}
 	}
 
 
