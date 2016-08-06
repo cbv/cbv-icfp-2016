@@ -36,5 +36,5 @@ for f in os.listdir("problems/"):
         continue
     if len(out) == 0:
         print "Submitting", f
-        subprocess.call(["./reptiloid.py", str(problem_number),
+        subprocess.call(["./reptiloid.py", f.lstrip("prob"),
                          str(subfile)])
