@@ -22,5 +22,5 @@ struct State : public std::vector< Facet > {
 	bool fold_dest(K::Point_2 const &a, K::Point_2 const &b);
 	void unfold();
 	bool refold(std::vector< K::Point_2 > const &marks); //returns false and leaves facets in weird positions if marks isn't consistent
-        void print_solution (std::ostream& out);
+        void print_solution (std::ostream& out) const;
 };

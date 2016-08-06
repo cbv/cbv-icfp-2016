@@ -424,7 +424,7 @@ bool State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
   return (from_flip > 0);
 }
 
-void State::print_solution(std::ostream& out) {
+void State::print_solution(std::ostream& out) const {
 	auto pp = [](CGAL::Gmpq const &q) -> std::string {
 		std::ostringstream str;
 		str << q.numerator();
