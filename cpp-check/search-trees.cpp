@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
-		std::cout << "Usage:\n./search-trees <problem>" << std::endl;
+		std::cerr << "Usage:\n./search-trees <problem>" << std::endl;
 	}
 	std::unique_ptr< Problem > problem = Problem::read(argv[1]);
 	if (!problem) {
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 				assert(f->data() == -1 || f->data() == 1);
 			}
 		}
-		std::cout << "Have " << inside << " inside faces and " << outside << " outside faces." << std::endl;
+		std::cerr << "Have " << inside << " inside faces and " << outside << " outside faces." << std::endl;
 
 	}
 

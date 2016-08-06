@@ -27,7 +27,7 @@ CGAL::Polygon_set_2< K > Problem::get_silhouette() const {
 std::unique_ptr< Problem > Problem::read(std::string const &filename) {
 	#define ERROR( X ) \
 		do { \
-			std::cout << "ERROR reading problem file '" << filename << "': " << X << std::endl; \
+			std::cerr << "ERROR reading problem file '" << filename << "': " << X << std::endl; \
 			return std::unique_ptr< Problem >(); \
 		} while(0)
 
@@ -233,7 +233,7 @@ bool Solution::is_valid() const {
 			auto s_len2 = s_dir.x() * s_dir.x() + s_dir.y() * s_dir.y();
 			auto d_len2 = d_dir.x() * d_dir.x() + d_dir.y() * d_dir.y();
 			if (s_len2 != d_len2) {
-				std::cout << "ERROR: facet " << &facet - &facets[0] << " has a scaling between its source and destination poses." << std::endl;
+				std::cerr << "ERROR: facet " << &facet - &facets[0] << " has a scaling between its source and destination poses." << std::endl;
 				return false;
 			}
 
@@ -246,7 +246,7 @@ bool Solution::is_valid() const {
 				auto d_x = d_vec.x() * d_dir.x() + d_vec.y() * d_dir.y();
 				auto d_y = d_vec.x() *-d_dir.y() + d_vec.y() * d_dir.x();
 				if (s_x != d_x) {
-					std::cout << "ERROR: facet " << &facet - &facets[0] << " changes shape under transformation (different along-first-edge coordinate)." << std::endl;
+					std::cerr << "ERROR: facet " << &facet - &facets[0] << " changes shape under transformation (different along-first-edge coordinate)." << std::endl;
 					return false;
 				}
 				if (s_y == 0 && d_y == 0) {
@@ -254,17 +254,17 @@ bool Solution::is_valid() const {
 				} else if (s_y == d_y) {
 					if (sign == 0) sign = 1;
 					if (sign != 1) {
-						std::cout << "ERROR: facet " << &facet - &facets[0] << " has one edge that doesn't look mirrored, but others are mirrored." << std::endl;
+						std::cerr << "ERROR: facet " << &facet - &facets[0] << " has one edge that doesn't look mirrored, but others are mirrored." << std::endl;
 						return false;
 					}
 				} else if (s_y == -d_y) {
 					if (sign == 0) sign = -1;
 					if (sign != -1) {
-						std::cout << "ERROR: facet " << &facet - &facets[0] << " has one edge that looks mirrored, but others look unmirrored." << std::endl;
+						std::cerr << "ERROR: facet " << &facet - &facets[0] << " has one edge that looks mirrored, but others look unmirrored." << std::endl;
 						return false;
 					}
 				} else {
-					std::cout << "ERROR: facet " << &facet - &facets[0] << " changes shape under transformation (different perpendicular-to-first-edge coordinate)." << std::endl;
+					std::cerr << "ERROR: facet " << &facet - &facets[0] << " changes shape under transformation (different perpendicular-to-first-edge coordinate)." << std::endl;
 					return false;
 				}
 
@@ -296,7 +296,7 @@ bool Solution::is_valid() const {
 std::unique_ptr< Solution > Solution::read(std::string const &filename) {
 	#define ERROR( X ) \
 		do { \
-			std::cout << "ERROR reading solution file '" << filename << "': " << X << std::endl; \
+			std::cerr << "ERROR reading solution file '" << filename << "': " << X << std::endl; \
 			return std::unique_ptr< Solution >(); \
 		} while(0)
 	std::unique_ptr< Solution > ret(new Solution);

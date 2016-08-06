@@ -91,7 +91,7 @@ std::vector< K::Vector_2 > const & unit_vectors() {
 				ret.emplace_back(v);
 			}
 		}
-		std::cout << "Had " << over << " gaps with over threshold angle, made " << ret.size() << " angles." << std::endl;
+		std::cerr << "Had " << over << " gaps with over threshold angle, made " << ret.size() << " angles." << std::endl;
 	}
 	return ret;
 }

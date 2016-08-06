@@ -126,7 +126,7 @@ bool State::refold(std::vector< K::Point_2 > const &marks) {
 				|| (e.a.y() == 1 && e.b.y() == 1)
 			);
 		}
-		//std::cout << "Edge '" << e.a << "," << e.b << "' has " << e.fa << " and " << int32_t(e.fb) << std::endl; //DEBUG
+		//std::cerr << "Edge '" << e.a << "," << e.b << "' has " << e.fa << " and " << int32_t(e.fb) << std::endl; //DEBUG
 	}
 
 	auto mark = [&edges](std::vector< K::Point_2 > const &pts, Edge::Tag mark) {
@@ -186,7 +186,7 @@ bool State::refold(std::vector< K::Point_2 > const &marks) {
 			} else {
 				name << b << "," << a;
 			}
-			//std::cout << "Facet " << f_index << " found edge " << name.str() << std::endl; //DEBUG
+			//std::cerr << "Facet " << f_index << " found edge " << name.str() << std::endl; //DEBUG
 			auto ii = edge_idx.find(name.str());
 			assert(ii != edge_idx.end());
 			assert(ii->second < edges.size());
@@ -416,10 +416,10 @@ bool State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 	*this = result;
 
   if (from_noflip == 0) {
-		std::cout << "WARNING: folded *everything*" << std::endl;
+		std::cerr << "WARNING: folded *everything*" << std::endl;
 	}
 	if (from_flip == 0) {
-		std::cout << "WARNING: folded *nothing*" << std::endl;
+		std::cerr << "WARNING: folded *nothing*" << std::endl;
 	}
   return (from_flip > 0);
 }
