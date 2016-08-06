@@ -5,30 +5,31 @@
 #include <CGAL/convex_hull_2.h>
 
 K::Segment_2 extend (const K::Segment_2& seg) {
-  K::Vector_2 vec = seg.to_vector();
-  K::FT bound, diff, scale;
-  bound = 10;
-  if (seg.is_vertical()) {
-    diff = seg.max().y() - seg.min().y();
-  } else {
-    diff = seg.max().x() - seg.min().x();
-  }
-  scale = bound / diff;
-  std::cout << "Scaling " << seg << " by " << scale << "." << std::endl;
-  return K::Segment_2(seg.source() - vec * scale, seg.source() + vec * scale);
+	K::Vector_2 vec = seg.to_vector();
+	K::FT bound, diff, scale;
+	bound = 10;
+	if (seg.is_vertical()) {
+		diff = seg.max().y() - seg.min().y();
+	} else {
+		diff = seg.max().x() - seg.min().x();
+	}
+	scale = bound / diff;
+	std::cout << "Scaling " << seg << " by " << scale << "." << std::endl;
+	return K::Segment_2(seg.source() - vec * scale, seg.source() + vec * scale);
 }
 
 bool fold_excess (State& state, const CGAL::Polygon_2<K>& goal) {
-  for (auto ei = goal.edges_begin(); ei != goal.edges_end(); ++ei) {
-    // TODO precompute far_endpoints
-    auto far_endpoints = extend(*ei);
-    bool excess = state.fold_dest(far_endpoints.source(), far_endpoints.target());
-    if (excess) {
-      std::cout << "Something is folded by the endpoints " << far_endpoints << "." << std::endl;
-      return true;
-    }
-  }
-  return false;
+	
+	for (auto ei = goal.edges_begin(); ei != goal.edges_end(); ++ei) {
+		// TODO precompute far_endpoints
+		auto far_endpoints = extend(*ei);
+		bool excess = state.fold_dest(ei->source(), ei->destination());
+		if (excess) {
+			std::cout << "Something is folded by the endpoints " << far_endpoints << "." << std::endl;
+			return true;
+		}
+	}
+	return false;
 }
 
 int main(int argc, char **argv) {
@@ -53,17 +54,17 @@ int main(int argc, char **argv) {
 
 	std::vector< K::Point_2 > hull;
 	CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter( hull ));
-  CGAL::Polygon_2<K> hull_poly(hull.begin(), hull.end());
+	CGAL::Polygon_2<K> hull_poly(hull.begin(), hull.end());
 	std::cout << "Hull has " << hull.size() << " points." << std::endl;
 
-  // get directions
+	// get directions
 	std::vector< K::Vector_2 > x_dirs = unit_vectors();
 	
 
 	{ //add directions that can be made rational:
 		uint_fast32_t added = 0;
 		uint_fast32_t skipped = 0;
-    for (auto ei = hull_poly.edges_begin(); ei != hull_poly.edges_end(); ++ei) {
+		for (auto ei = hull_poly.edges_begin(); ei != hull_poly.edges_end(); ++ei) {
 			K::Vector_2 dir = ei->to_vector();
 			CGAL::Gmpq len2 = dir * dir;
 			CGAL::Gmpz num2 = len2.numerator();
@@ -84,31 +85,31 @@ int main(int argc, char **argv) {
 	}
 
 	auto get_fold = [&hull_poly](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
-    std::cout << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
-	  K::Vector_2 y = x.perpendicular(CGAL::COUNTERCLOCKWISE);
-    K::Point_2 mid = min + (max - min) / 2;
-    K::Point_2 midpoint = CGAL::ORIGIN + mid.x() * x + mid.y() * y;
-    Facet square;
-    square.source = {K::Point_2(0,0), K::Point_2(1,0), K::Point_2(1,1), K::Point_2(0,1)};
-    square.destination = {midpoint-x/2-y/2, midpoint+x/2-y/2, midpoint+x/2+y/2, midpoint-x/2+y/2};
-    std::cout << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
-    std::cout << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
-    square.compute_xf();
-    State state;
-    state.push_back (square);
-    // std::cout << "Ready to fold:" << std::endl;
-    uint_fast32_t counter = 0;
-    while (fold_excess(state, hull_poly)) {
-      ++counter;
-		  std::cout << "Folded " << counter << " times." << std::endl;
-    }
+		std::cout << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
+		K::Vector_2 y = x.perpendicular(CGAL::COUNTERCLOCKWISE);
+		K::Point_2 mid = min + (max - min) / 2;
+		K::Point_2 midpoint = CGAL::ORIGIN + mid.x() * x + mid.y() * y;
+		Facet square;
+		square.source = {K::Point_2(0,0), K::Point_2(1,0), K::Point_2(1,1), K::Point_2(0,1)};
+		square.destination = {midpoint-x/2-y/2, midpoint+x/2-y/2, midpoint+x/2+y/2, midpoint-x/2+y/2};
+		std::cout << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
+		std::cout << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
+		square.compute_xf();
+		State state;
+		state.push_back (square);
+		// std::cout << "Ready to fold:" << std::endl;
+		uint_fast32_t counter = 0;
+		while (fold_excess(state, hull_poly)) {
+			++counter;
+			std::cout << "Folded " << counter << " times." << std::endl;
+		}
 		std::cout << "Folded " << counter << " times in total." << std::endl;
-    state.print_solution(std::cout); //DEBUG
-    // TODO calculate the score
-    return state;
-  };
-    
-  // TODO score
+		state.print_solution(std::cout); //DEBUG
+		// TODO calculate the score
+		return state;
+	};
+		
+	// TODO score
 	// CGAL::Gmpq best_score = 0;
 	struct {
 		K::Vector_2 x = K::Vector_2(0,0);
@@ -143,7 +144,7 @@ int main(int argc, char **argv) {
 		}
 		State score = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
 /*
-    if (score > best_score) {
+		if (score > best_score) {
 			best_score = score;
 			best.x = x_dir;
 			best.min = K::Point_2(min_x, min_y);
@@ -152,7 +153,7 @@ int main(int argc, char **argv) {
 */
 	}
 
-  // TODO print best solutions
+	// TODO print best solutions
 
 //	std::cout << " --- solution (score = " << best_score << ") --- \n" << out.str();
 
