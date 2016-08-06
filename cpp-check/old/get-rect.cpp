@@ -1,3 +1,5 @@
+#include "base.hpp"
+#include "utils.hpp"
 #include "structures.hpp"
 #include "rotations.hpp"
 
@@ -23,7 +25,7 @@ int main(int argc, char **argv) {
 		points.insert(points.end(), poly.begin(), poly.end());
 	}
 
-	std::vector< K::Point_2 > hull;
+	CGAL::Polygon_2< K > hull;
 
 	CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter( hull ));
 
@@ -39,37 +41,27 @@ int main(int argc, char **argv) {
 	
 
 	{ //add directions that can be made rational:
-		uint_fast32_t added = 0;
-		uint_fast32_t skipped = 0;
-		for (uint_fast32_t e = 0; e < hull.size(); ++e) {
-			auto const &a = hull[e];
-			auto const &b = hull[(e+1)%hull.size()];
-			K::Vector_2 dir(b-a);
-			CGAL::Gmpq len2 = dir * dir;
-			CGAL::Gmpz num2 = len2.numerator();
-			CGAL::Gmpz den2 = len2.denominator();
-			mpz_t num,den;
-			mpz_init(num);
-			mpz_init(den);
-			if (mpz_root(num, num2.mpz(), 2) != 0 && mpz_root(den, den2.mpz(), 2)) {
-				x_dirs.emplace_back((dir / CGAL::Gmpz(num)) * CGAL::Gmpz(den));
-				++added;
+		uint_fast32_t exact = 0;
+		uint_fast32_t inexact = 0;
+		for (auto ei = hull.edges_begin(); ei != hull.edges_end(); ++ei) {
+			auto pair = pythagorean_unit_approx(ei->to_vector());
+			if (pair.first) {
+				++exact;
 			} else {
-				++skipped;
+				++inexact;
+				std::cerr << "Approximate " << *ei << " by " << pair.second << "." << std::endl;
 			}
-			mpz_clear(num);
-			mpz_clear(den);
+			x_dirs.emplace_back(pair.second);
 		}
-		std::cerr << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
+		std::cerr << "Addded " << exact << " exact directions and " << inexact << " inexact directions." << std::endl;
 	}
-
 
 	auto get_score = [&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
 		CGAL::Polygon_set_2< K > a = problem->get_silhouette();
 		CGAL::Polygon_2< K > b;
 
 		{ //build square from min/max:
-			K::Vector_2 y(-x.y(), x.x());
+			K::Vector_2 y = rotate_left90(x);
 			b.push_back(K::Point_2(0,0) + min.x() * x + min.y() * y);
 			b.push_back(K::Point_2(0,0) + max.x() * x + min.y() * y);
 			b.push_back(K::Point_2(0,0) + max.x() * x + max.y() * y);
@@ -128,9 +120,9 @@ int main(int argc, char **argv) {
 		CGAL::Gmpq max_x = min_x;
 		CGAL::Gmpq min_y = y_dir * K::Vector_2(hull[0].x(), hull[0].y());
 		CGAL::Gmpq max_y = min_y;
-		for (auto const &pt : hull) {
-			CGAL::Gmpq x = x_dir * K::Vector_2(pt.x(), pt.y());
-			CGAL::Gmpq y = y_dir * K::Vector_2(pt.x(), pt.y());
+		for (auto vi = hull.vertices_begin(); vi != hull.vertices_end(); ++vi) {
+			CGAL::Gmpq x = x_dir * (*vi - CGAL::ORIGIN);
+			CGAL::Gmpq y = y_dir * (*vi - CGAL::ORIGIN);
 			if (x < min_x) min_x = x;
 			if (x > max_x) max_x = x;
 			if (y < min_y) min_y = y;

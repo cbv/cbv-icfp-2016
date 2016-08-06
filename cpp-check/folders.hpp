@@ -1,3 +1,5 @@
+#pragma once
+
 #include "structures.hpp"
 #include <vector>
 
