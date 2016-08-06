@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 	std::cout << "------\n";
 
 	std::ostringstream out;
-        state.print_solution(out);
+	state.print_solution(out);
 
 	std::cout << out.str();
 

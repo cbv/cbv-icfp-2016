@@ -434,7 +434,6 @@ void State::print_solution(std::ostream& out) const {
 		return str.str();
 	};
 
-  //print out solution -- TODO need to de-duplicate verts for this.
 	std::unordered_map< std::string, uint32_t > source_inds;
 	std::vector< std::string > source_verts;
 	std::vector< std::string > destination_verts;
