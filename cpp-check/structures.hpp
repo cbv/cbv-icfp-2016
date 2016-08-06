@@ -19,7 +19,7 @@ struct Problem {
 
 struct Solution {
 	std::vector< K::Point_2 > source;
-	std::vector< std::vector< uint32_t > > facets;
+	std::vector< std::vector< uint_fast32_t > > facets;
 	std::vector< K::Point_2 > destination;
 
 	CGAL::Polygon_set_2< K > get_silhouette() const;

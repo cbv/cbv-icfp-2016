@@ -66,8 +66,8 @@ void Facet::compute_xf() {
 			) / len2;
 		xf[2] = p2v(destination[0]) - (source[0].x() * xf[0] + source[0].y() * xf[1]);
 
-		int32_t sign = 0;
-		for (uint32_t i = 2; i < source.size(); ++i) {
+		int_fast32_t sign = 0;
+		for (uint_fast32_t i = 2; i < source.size(); ++i) {
 			K::Vector_2 temp = xf[0] * source[i].x() + xf[1] * source[i].y() + xf[2];
 			assert(temp.x() == destination[i].x());
 			if (temp.y() == destination[i].y()) {
@@ -158,8 +158,8 @@ void State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 		assert(flip_xf[0] * (b + perp).x() + flip_xf[1] * (b + perp).y() + flip_xf[2] == p2v(b - perp));
 	}
 
-	uint32_t from_flip = 0;
-	uint32_t from_noflip = 0;
+	uint_fast32_t from_flip = 0;
+	uint_fast32_t from_noflip = 0;
 
 	//any facet whose destination overlaps the line through a and b gets split.
 	State result;
@@ -178,7 +178,7 @@ void State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 				);
 			}
 			assert(f.source.size() == f.destination.size());
-			for (uint32_t i = 0; i < f.source.size(); ++i) {
+			for (uint_fast32_t i = 0; i < f.source.size(); ++i) {
 				assert(f.xf[0] * f.source[i].x() + f.xf[1] * f.source[i].y() + f.xf[2] == p2v(f.destination[i]));
 			}
 		};
@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
 	//DEBUG:
 	for (auto const &facet : state) {
 		std::cout << "   ------\n";
-		for (uint32_t i = 0; i < facet.source.size(); ++i) {
+		for (uint_fast32_t i = 0; i < facet.source.size(); ++i) {
 			std::string src_name = pp(facet.source[i].x()) + "," + pp(facet.source[i].y());
 			std::string dst_name = pp(facet.destination[i].x()) + "," + pp(facet.destination[i].y());
 			std::cout << "     " << src_name << " -> " << dst_name << "\n";
@@ -350,17 +350,17 @@ int main(int argc, char **argv) {
 */
 
 	//print out solution -- need to de-duplicate verts for this.
-	std::unordered_map< std::string, uint32_t > source_inds;
+	std::unordered_map< std::string, uint_fast32_t > source_inds;
 	std::vector< std::string > source_verts;
 	std::vector< std::string > destination_verts;
 	std::ostringstream facet_info;
 	for (auto const &facet : state) {
 		assert(facet.source.size() == facet.destination.size());
 		facet_info << facet.source.size();
-		for (uint32_t i = 0; i < facet.source.size(); ++i) {
+		for (uint_fast32_t i = 0; i < facet.source.size(); ++i) {
 			std::string src_name = pp(facet.source[i].x()) + "," + pp(facet.source[i].y());
 			std::string dst_name = pp(facet.destination[i].x()) + "," + pp(facet.destination[i].y());
-			uint32_t idx = source_inds.insert(std::make_pair(src_name, source_inds.size())).first->second;
+			uint_fast32_t idx = source_inds.insert(std::make_pair(src_name, source_inds.size())).first->second;
 			if (idx == source_verts.size()) {
 				source_verts.emplace_back(src_name);
 				destination_verts.emplace_back(dst_name);

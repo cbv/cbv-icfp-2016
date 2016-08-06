@@ -39,9 +39,9 @@ int main(int argc, char **argv) {
 	
 
 	{ //add directions that can be made rational:
-		uint32_t added = 0;
-		uint32_t skipped = 0;
-		for (uint32_t e = 0; e < hull.size(); ++e) {
+		uint_fast32_t added = 0;
+		uint_fast32_t skipped = 0;
+		for (uint_fast32_t e = 0; e < hull.size(); ++e) {
 			auto const &a = hull[e];
 			auto const &b = hull[(e+1)%hull.size()];
 			K::Vector_2 dir(b-a);
@@ -191,14 +191,14 @@ int main(int argc, char **argv) {
 	std::ostringstream out;
 
 	out << x_folds.size() * y_folds.size() << std::endl; //number of vertices
-	for (uint32_t iy = 0; iy < y_folds.size(); ++iy) {
-		for (uint32_t ix = 0; ix < x_folds.size(); ++ix) {
+	for (uint_fast32_t iy = 0; iy < y_folds.size(); ++iy) {
+		for (uint_fast32_t ix = 0; ix < x_folds.size(); ++ix) {
 			out << x_folds[ix] << "," << y_folds[iy] << std::endl;
 		}
 	}
 	out << (x_folds.size()-1) * (y_folds.size()-1) << std::endl; //number of facets
-	for (uint32_t iy = 0; iy + 1 < y_folds.size(); ++iy) {
-		for (uint32_t ix = 0; ix + 1 < x_folds.size(); ++ix) {
+	for (uint_fast32_t iy = 0; iy + 1 < y_folds.size(); ++iy) {
+		for (uint_fast32_t ix = 0; ix + 1 < x_folds.size(); ++ix) {
 			out << "4"
 				<< " " << (ix + iy * x_folds.size())
 				<< " " << (ix + 1 + iy * x_folds.size())
@@ -208,8 +208,8 @@ int main(int argc, char **argv) {
 		}
 	}
 	//destinations:
-	for (uint32_t iy = 0; iy < y_folds.size(); ++iy) {
-		for (uint32_t ix = 0; ix < x_folds.size(); ++ix) {
+	for (uint_fast32_t iy = 0; iy < y_folds.size(); ++iy) {
+		for (uint_fast32_t ix = 0; ix < x_folds.size(); ++ix) {
 			auto pt = x_dests[ix] * best.x + y_dests[iy] * K::Vector_2(-best.x.y(), best.x.x());
 			out << pt.x() << "," << pt.y() << std::endl;
 		}

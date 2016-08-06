@@ -8,10 +8,10 @@ std::vector< K::Vector_2 > const & unit_vectors() {
 	if (ret.empty()) {
 		/* This supposedly will hit all triples, but it seems to produce a few gaps
 		std::vector< std::tuple< CGAL::Gmpz, CGAL::Gmpz, CGAL::Gmpz > > triples;
-		const uint32_t Count = 3*100000 + 1;
+		const uint_fast32_t Count = 3*100000 + 1;
 		triples.reserve(Count);
 		triples.emplace_back(3,4,5);
-		for (uint32_t i = 0; i < (Count-1)/3; ++i) {
+		for (uint_fast32_t i = 0; i < (Count-1)/3; ++i) {
 			assert(i < triples.size());
 			CGAL::Gmpz a = std::get< 0 >(triples[i]);
 			CGAL::Gmpz b = std::get< 1 >(triples[i]);
@@ -82,7 +82,7 @@ std::vector< K::Vector_2 > const & unit_vectors() {
 		ret.reserve(vecs.size());
 
 		CGAL::Gmpq thresh(std::cos(1.0f / 360.0f * M_PI));
-		uint32_t over = 0;
+		uint_fast32_t over = 0;
 		for (auto const &v : vecs) {
 			if (!ret.empty() && ret.back() * v < thresh) ++over;
 			if (ret.size() >= 2 && ret[ret.size()-2] * v > thresh) {

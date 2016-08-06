@@ -33,19 +33,19 @@ std::unique_ptr< Problem > Problem::read(std::string const &filename) {
 
 	std::unique_ptr< Problem > ret(new Problem);
 	std::ifstream file(filename);
-	uint32_t poly_count = 0;
+	uint_fast32_t poly_count = 0;
 	if (!(file >> poly_count)) {
 		ERROR("failed to read polygon count.");
 	}
 	ret->silhouette.reserve(poly_count);
-	for (uint32_t p = 0; p < poly_count; ++p) {
-		uint32_t vert_count = 0;
+	for (uint_fast32_t p = 0; p < poly_count; ++p) {
+		uint_fast32_t vert_count = 0;
 		if (!(file >> vert_count)) {
 			ERROR("failed to read vertex count for polygon " << p << ".");
 		}
 		ret->silhouette.emplace_back();
 		ret->silhouette.back().reserve(vert_count);
-		for (uint32_t v = 0; v < vert_count; ++v) {
+		for (uint_fast32_t v = 0; v < vert_count; ++v) {
 			CGAL::Gmpq x,y;
 			char comma;
 			if (!(file >> x >> comma >> y)) {
@@ -58,12 +58,12 @@ std::unique_ptr< Problem > Problem::read(std::string const &filename) {
 		}
 	}
 
-	uint32_t skel_count = 0;
+	uint_fast32_t skel_count = 0;
 	if (!(file >> skel_count)) {
 		ERROR("failed to read skeleton count.");
 	}
 	ret->skeleton.reserve(skel_count);
-	for (uint32_t l = 0; l < skel_count; ++l) {
+	for (uint_fast32_t l = 0; l < skel_count; ++l) {
 		CGAL::Gmpq x1,y1,x2,y2;
 		char comma1, comma2;
 		if (!(file >> x1 >> comma1 >> y1 >> x2 >> comma2 >> y2)) {
@@ -120,10 +120,10 @@ bool Solution::is_valid() const {
 	typedef CGAL::Arrangement_2< T2 > Arrangement_2;
 
 	std::vector< T2::X_monotone_curve_2 > source_edges;
-	std::unordered_set< uint32_t > used_verts;
+	std::unordered_set< uint_fast32_t > used_verts;
 
 	for (auto const &facet : facets) {
-		for (uint32_t i = 0; i < facet.size(); ++i) {
+		for (uint_fast32_t i = 0; i < facet.size(); ++i) {
 			used_verts.insert(facet[i]);
 
 			auto const &a = source[facet[i]];
@@ -138,7 +138,7 @@ bool Solution::is_valid() const {
 			source_edges.emplace_back(a,b);
 
 			//"All facet polygons are simple; a facet polygon’s perimeter must not intersect itself."
-			for (uint32_t i2 = 0; i2 < facet.size(); ++i2) {
+			for (uint_fast32_t i2 = 0; i2 < facet.size(); ++i2) {
 				if (i2 == i) continue;
 
 				auto const &a2 = source[facet[i2]];
@@ -169,7 +169,7 @@ bool Solution::is_valid() const {
 		//"At source position, the union set of all facets exactly matches the initial square."
 		//(we do this by computing area)
 		CGAL::Gmpq area = 0;
-		for (uint32_t i = 1; i + 1 < facet.size(); ++i) {
+		for (uint_fast32_t i = 1; i + 1 < facet.size(); ++i) {
 			auto const &a = source[facet[0]];
 			auto const &b = source[facet[i]];
 			auto const &c = source[facet[i+1]];
@@ -197,7 +197,7 @@ bool Solution::is_valid() const {
 				return false;
 			}
 
-			int32_t sign = 0;
+			int_fast32_t sign = 0;
 			for (auto index : facet) {
 				auto s_vec = source[index] - s_origin;
 				auto s_x = s_vec.x() * s_dir.x() + s_vec.y() * s_dir.y();
@@ -261,12 +261,12 @@ std::unique_ptr< Solution > Solution::read(std::string const &filename) {
 		} while(0)
 	std::unique_ptr< Solution > ret(new Solution);
 	std::ifstream file(filename);
-	uint32_t vert_count = 0;
+	uint_fast32_t vert_count = 0;
 	if (!(file >> vert_count)) {
 		ERROR("failed to read vertex count.");
 	}
 	ret->source.reserve(vert_count);
-	for (uint32_t v = 0; v < vert_count; ++v) {
+	for (uint_fast32_t v = 0; v < vert_count; ++v) {
 		CGAL::Gmpq x,y;
 		char comma;
 		if (!(file >> x >> comma >> y)) {
@@ -277,20 +277,20 @@ std::unique_ptr< Solution > Solution::read(std::string const &filename) {
 		}
 		ret->source.emplace_back(x,y);
 	}
-	uint32_t facet_count = 0;
+	uint_fast32_t facet_count = 0;
 	if (!(file >> facet_count)) {
 		ERROR("failed to read facet count.");
 	}
 	ret->facets.reserve(facet_count);
-	for (uint32_t f = 0; f < facet_count; ++f) {
-		uint32_t index_count = 0;
+	for (uint_fast32_t f = 0; f < facet_count; ++f) {
+		uint_fast32_t index_count = 0;
 		if (!(file >> index_count)) {
 			ERROR("failed to read index count for facet " << f << ".");
 		}
 		ret->facets.emplace_back();
 		ret->facets.back().reserve(index_count);
-		for (uint32_t i = 0; i < index_count; ++i) {
-			uint32_t index = 0;
+		for (uint_fast32_t i = 0; i < index_count; ++i) {
+			uint_fast32_t index = 0;
 			if (!(file >> index)) {
 				ERROR("failed to read index " << i << " for facet " << f << ".");
 			}
@@ -301,7 +301,7 @@ std::unique_ptr< Solution > Solution::read(std::string const &filename) {
 		}
 	}
 	ret->destination.reserve(vert_count);
-	for (uint32_t v = 0; v < vert_count; ++v) {
+	for (uint_fast32_t v = 0; v < vert_count; ++v) {
 		CGAL::Gmpq x,y;
 		char comma;
 		if (!(file >> x >> comma >> y)) {
