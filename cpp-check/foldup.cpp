@@ -33,7 +33,7 @@ struct Facet {
 };
 
 K::Vector_2 p2v(K::Point_2 const &p) {
-	return K::Vector_2(p.x(), p.y());
+	return p - ORIGIN;
 }
 
 void Facet::compute_xf() {
