@@ -43,6 +43,7 @@ fun intersect (a, b) ((x1, y1), (x2, y2)) =
 
 exception Invalid
 
+(* interolate linearly between two points using a factor t in [0,1]*)
 fun intpt t ((x1, y1), (x2, y2)) =
     (Rat.add (x1, Rat.mult (t, Rat.sub (x2, x1))),
      Rat.add (y1, Rat.mult (t, Rat.sub (y2, y1))))
@@ -98,6 +99,7 @@ fun intersect_poly (a, b)
         else (source @ s', f1::f2::facets, dest @ d')
     end
 
+(* Reflects point (x,y) across line ax + b *)
 fun reflect_pt (a, b) (x, y) =
     let val _ = print ("reflect " ^ (Rat.toString x) ^ ", " ^ (Rat.toString y) ^ "\n")
         val d = Rat.div (Rat.add (x, Rat.mult (Rat.sub (y, b), a)),
@@ -110,6 +112,7 @@ fun reflect_pt (a, b) (x, y) =
         (x', y')
     end
 
+(* Fold sol along line  ax + b*)
 fun fold_sol (a, b) (sol as (source, facets, dest) : sol) : sol =
     let val (s', f', d') = List.foldl (intersect_poly (a, b))
                                       sol
@@ -173,7 +176,54 @@ val startsol = ([(p0, p0), (p0, p1), (p1, p1), (p1, p0)],
                 [[i 0, i 1, i 2, i 3]],
                 [(p0, p0), (p0, p1), (p1, p1), (p1, p0)])
 
-val _ = draw_sol (fold_sol ((0, 1), (1, 2)) startsol)
+infix 5 |>
+fun x |> f = f x
+
+val sol0 =
+  startsol
+|> fold_sol ((0,1),(1,2))
+
+val sol1 = 
+  startsol
+|> fold_sol ((0,1),(1,2))
+|> fold_sol ((0,1),(3,4))
+|> fold_sol ((1,1),(1,2))
+|> fold_sol ((~1,1),(3,2))
+(*val _ = draw_sol startsol*)
+(* val _ = draw_sol (fold_sol ((0, 1), (1, 2)) startsol)*)
+
+
+val is = Int32.toString o i
+
+fun rat_to_string (n,d) =
+    case d of
+	1 => is n
+      | _ => is n ^ "/" ^ is d
+
+fun point_to_string (r1,r2) = rat_to_string r1 ^ "," ^ rat_to_string r2
+
+fun points_to_string s =
+    List.map point_to_string s |> String.concatWith "\n"
+
+fun source_points_to_string s =
+    Int32.toString (List.length s) ^ "\n" ^ points_to_string s
+ 
+fun facet_to_string f =
+    List.map Int32.toString f |> String.concatWith " "
+
+fun facets_to_string f =
+    Int32.toString (List.length f) ^ "\n" ^ (List.map facet_to_string f |> String.concatWith "\n")
+
+fun sol_to_string ((s,f,ds):sol) =
+    source_points_to_string s ^ "\n" ^ facets_to_string f ^ "\n" ^ points_to_string ds
+
+fun print_sol ((s,f,ds): sol) =
+    print ("******* SOLUTION STARTS HERE *********\n" ^ sol_to_string (s,f,ds) ^ "\n******* SOLUTION ENDS HERE *********\n" )
+
+
+val _ = draw_sol sol1
+
+val _ = print_sol sol0
 
 fun loop () = (MLX.usleep 1000; loop ())
 
