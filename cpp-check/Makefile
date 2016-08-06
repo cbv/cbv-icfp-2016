@@ -3,8 +3,6 @@
 
 UNAME := $(shell uname)
 HEADERS := structures.hpp rotations.hpp
-#patching this out because I don't like linking code that isn't needed
-#LINKED_OBJECTS := $(patsubst %.hpp,objs/%.o,${HEADERS})
 
 ifeq ($(UNAME),Darwin)
 	CPP=clang++ -std=c++11 -Wall -Werror -g
@@ -29,5 +27,5 @@ check : objs/check.o objs/structures.o
 get-rect : objs/get-rect.o objs/structures.o objs/rotations.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
-foldup : objs/foldup.o objs/structures.o
+foldup : objs/foldup.o objs/structures.o objs/folders.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
