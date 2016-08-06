@@ -1,4 +1,5 @@
 open Graphics
+open Shape
 
 val i = IntInf.toInt
 
@@ -12,10 +13,12 @@ val file =
       | _ => (print "Usage: vis <problem file>\n";
               OS.Process.exit OS.Process.failure)
 
+(*
 val _ = openwindow NONE (i (d * 2 + buf * 2 + buf1 * 2), i (d + buf + buf1))
 
 val _ = setforeground (MLX.fromints 0 0 0)
 val _ = MLX.usleep 10000
+*)
 
 fun int_of_rat (a, b) = i (Int.div (a * d, b))
 
@@ -90,16 +93,40 @@ fun center_prob (sil, skel) =
         (center_sil sil, center_skel skel)
     end
 
+exception Invalid
+
+fun write_skel_to_bmp (filename: string, s: skelly) =
+    case s of
+        [] => raise Invalid
+      | e::s =>
+        let fun union (a, b) = Union (a, b)
+            fun ln ((x1, y1), (x2, y2)) =
+                let val p1 = (int_of_rat x1, int_of_rat y1)
+                    val p2 = (int_of_rat x2, int_of_rat y2)
+                in
+                    Line (p1, p2)
+                end
+            val sh = List.foldl union (ln e) (List.map ln s)
+        in
+            (* writeshape (i (d + buf + buf1), i (d + buf + buf1), sh, filename) *)
+            writeshape_bb (sh, filename)
+
+        end
+
 fun draw_prob (p: problem) =
     let val (sil, skel) = center_prob p
     in
+        (*
         draw_sil (i buf1, i buf1) sil;
         draw_skel (i (d + buf + buf1), i buf1) skel;
-        flush ()
+        flush () *)
+        write_skel_to_bmp (file ^ ".bmp", skel)
     end
 
 val _ = draw_prob (load file)
 
+(*
 fun loop () = (MLX.usleep 1000; loop ())
 
 val _ = loop ()
+*)
