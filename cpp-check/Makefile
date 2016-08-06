@@ -2,7 +2,7 @@
 
 
 UNAME := $(shell uname)
-HEADERS := structures.hpp rotations.hpp
+HEADERS := structures.hpp rotations.hpp folders.hpp
 
 ifeq ($(UNAME),Darwin)
 	CPP=clang++ -std=c++11 -Wall -Werror -g
@@ -13,7 +13,11 @@ ifeq ($(UNAME),Linux)
 	SDL_LIBS=-L../../game-libs64/out/include -lSDL2 -lGL
 endif
 
-all : check get-rect foldup
+all : check get-rect foldup show
+
+clean :
+	rm -f check get-rect foldup show
+	rm -rf objs
 
 objs :
 	mkdir -p objs

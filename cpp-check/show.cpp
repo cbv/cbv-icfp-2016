@@ -32,7 +32,6 @@ int main(int argc, char **argv) {
 	}
 */
 
-
 	auto to_pt = [](K::Point_2 const &pt) -> glm::vec2 {
 		return glm::vec2(CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
 	};
@@ -67,7 +66,7 @@ int main(int argc, char **argv) {
 		diameter = std::max((src_max.x - src_min.x) * 2.0f / viz.aspect, diameter);
 		diameter = std::max((dst_max.x - dst_min.x) * 2.0f / viz.aspect, diameter);
 
-		glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+		glClearColor(0.7f, 0.66f, 0.62f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glLoadIdentity();
@@ -75,14 +74,13 @@ int main(int argc, char **argv) {
 		glTranslatef(0.25f * viz.aspect * diameter - 0.5f * (src_max.x + src_min.x), - 0.5f * (src_max.y + src_min.y), 0.0f);
 
 		glBegin(GL_LINES);
-		glColor3f(0.0f, 0.0f, 0.0f);
-		glVertex2f(src_min.x, src_min.y); glVertex2f(src_max.x, src_max.y);
-		glVertex2f(src_min.x, src_max.y); glVertex2f(src_max.x, src_min.y);
+
+		if (solution)
 		for (auto const &f : solution->facets) {
 			for (uint32_t i = 0; i < f.size(); ++i) {
 				glm::vec2 a = to_pt(solution->source[f[i]]);
 				glm::vec2 b = to_pt(solution->source[f[(i+1)%f.size()]]);
-				glColor3f(1.0f, 1.0f, 1.0f);
+				glColor3f(0.0f, 0.0f, 0.0f);
 				glVertex2f(a.x, a.y);
 				glVertex2f(b.x, b.y);
 			}
@@ -94,14 +92,12 @@ int main(int argc, char **argv) {
 		glTranslatef(-0.25f * viz.aspect * diameter - 0.5f * (dst_max.x + dst_min.x), - 0.5f * (dst_max.y + dst_min.y), 0.0f);
 
 		glBegin(GL_LINES);
-		glColor3f(0.0f, 0.0f, 0.0f);
-		glVertex2f(dst_min.x, dst_min.y); glVertex2f(dst_max.x, dst_max.y);
-		glVertex2f(dst_min.x, dst_max.y); glVertex2f(dst_max.x, dst_min.y);
+		if (solution)
 		for (auto const &f : solution->facets) {
 			for (uint32_t i = 0; i < f.size(); ++i) {
 				glm::vec2 a = to_pt(solution->destination[f[i]]);
 				glm::vec2 b = to_pt(solution->destination[f[(i+1)%f.size()]]);
-				glColor3f(1.0f, 1.0f, 1.0f);
+				glColor3f(0.0f, 0.0f, 0.0f);
 				glVertex2f(a.x, a.y);
 				glVertex2f(b.x, b.y);
 			}

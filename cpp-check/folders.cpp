@@ -69,7 +69,7 @@ void State::unfold() {
 	refold(std::vector< K::Point_2 >());
 }
 
-void State::refold(std::vector< K::Point_2 > const &marks) {
+bool State::refold(std::vector< K::Point_2 > const &marks) {
 	struct Edge {
 		enum Tag {
 			Outside,
@@ -244,7 +244,8 @@ void State::refold(std::vector< K::Point_2 > const &marks) {
 					&& other.xf[1] == other_xf[1]
 					&& other.xf[2] == other_xf[2])) {
 					std::cerr << "ERROR: inconsistent marking; can't refold." << std::endl;
-					exit(1);
+					unfold(); //reset marking
+					return false;
 				}
 			} else {
 				other.xf[0] = other_xf[0];
@@ -266,6 +267,7 @@ void State::refold(std::vector< K::Point_2 > const &marks) {
 	}
 
 	assert(done.size() == this->size());
+	return true;
 }
 
 void State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
