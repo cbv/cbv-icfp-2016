@@ -7,18 +7,19 @@ val d = 350
 val buf1 = 25
 val buf = 200
 
-val file =
+val (infile, outfile) =
     case CommandLine.arguments () of
-        f::t => f
-      | _ => (print "Usage: vis <problem file>\n";
+        inf::outf::t => (inf, SOME outf)
+      | inf::[] => (inf, NONE)
+      | _ => (print "Usage: vis <problem file> (<output bmp>)\n";
               OS.Process.exit OS.Process.failure)
-
-(*
-val _ = openwindow NONE (i (d * 2 + buf * 2 + buf1 * 2), i (d + buf + buf1))
-
-val _ = setforeground (MLX.fromints 0 0 0)
-val _ = MLX.usleep 10000
-*)
+val _ =
+    case outfile of
+        NONE =>
+        (openwindow NONE (i (d * 2 + buf * 2 + buf1 * 2), i (d + buf + buf1));
+         setforeground (MLX.fromints 0 0 0);
+         MLX.usleep 10000)
+      | SOME _ => ()
 
 fun int_of_rat (a, b) = i (Int.div (a * d, b))
 
@@ -115,18 +116,15 @@ fun write_skel_to_bmp (filename: string, s: skelly) =
 
 fun draw_prob (p: problem) =
     let val (sil, skel) = center_prob p
+        fun loop () = (MLX.usleep 1000; loop ())
     in
-        (*
-        draw_sil (i buf1, i buf1) sil;
-        draw_skel (i (d + buf + buf1), i buf1) skel;
-        flush () *)
-        write_skel_to_bmp (file ^ ".bmp", skel)
+        case outfile of
+            SOME f => write_skel_to_bmp (f, skel)
+          | NONE =>
+            (draw_sil (i buf1, i buf1) sil;
+             draw_skel (i (d + buf + buf1), i buf1) skel;
+             flush ();
+             loop ())
     end
 
-val _ = draw_prob (load file)
-
-(*
-fun loop () = (MLX.usleep 1000; loop ())
-
-val _ = loop ()
-*)
+val _ = draw_prob (load infile)
