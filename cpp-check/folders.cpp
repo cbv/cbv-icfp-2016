@@ -425,8 +425,6 @@ bool State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 }
 
 void State::print_solution(std::ostream& out) const {
-	//TODO: prints valid but not *normalized* solutions.
-
 	auto pp = [](CGAL::Gmpq const &q) -> std::string {
 		std::ostringstream str;
 		str << q.numerator();
