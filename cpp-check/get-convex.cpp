@@ -201,9 +201,12 @@ int main(int argc, char **argv) {
 		}
 		if (fits) {
 			std::cout << "Found exact wrapping. This is as good as we can do." << std::endl;
-			State score = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
+			State wrap = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
 			//this should be as good as it can be -- it should cover the hull.
-			score.print_solution("temp.dump");
+			wrap.print_solution(std::cout);
+			if (argc == 3) {
+				wrap.print_solution(argv[2]);
+			}
 			return 0;
 		} else if (pass == '~') {
 			auto score = get_score(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
@@ -218,7 +221,10 @@ int main(int argc, char **argv) {
 	std::cout << "Using approximate wrapping." << std::endl;
 	{
 		State wrap = get_fold(best.x, best.min, best.max);
-		wrap.print_solution("temp.dump");
+		wrap.print_solution(std::cout);
+		if (argc == 3) {
+			wrap.print_solution(argv[2]);
+		}
 	}
 
 /*
