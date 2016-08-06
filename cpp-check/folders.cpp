@@ -424,7 +424,9 @@ bool State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
   return (from_flip > 0);
 }
 
-void State::print_solution(std::ostream& out) {
+void State::print_solution(std::ostream& out) const {
+	//TODO: prints valid but not *normalized* solutions.
+
 	auto pp = [](CGAL::Gmpq const &q) -> std::string {
 		std::ostringstream str;
 		str << q.numerator();
@@ -434,7 +436,6 @@ void State::print_solution(std::ostream& out) {
 		return str.str();
 	};
 
-  //print out solution -- TODO need to de-duplicate verts for this.
 	std::unordered_map< std::string, uint32_t > source_inds;
 	std::vector< std::string > source_verts;
 	std::vector< std::string > destination_verts;
