@@ -19,14 +19,14 @@ def eprint(*args, **kwargs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check and possibly submit a solution.")
-    parser.add_argument("problem", type=int, help="problem number")
+    parser.add_argument("problem_number", type=int, help="problem number")
     parser.add_argument("solution", help="solution file")
     args = parser.parse_args()
 
     #if sys.stdin.isatty():
     #    eprint("waiting for solution on stdin...")
 
-    problem_number = args.problem
+    problem_number = args.problem_number
     solfile = args.solution
     probfile = "problems/prob{}".format(problem_number)
 
