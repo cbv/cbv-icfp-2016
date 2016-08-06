@@ -109,7 +109,9 @@ int main(int argc, char **argv) {
 				if (marks.empty()) {
 					std::cerr << "WARNING: refolding with no marks." << std::endl;
 				}
-				state.refold(marks);
+				if (!state.refold(marks)) {
+					std::cerr << "WARNING: refolding failed." << std::endl;
+				}
 				marks.clear();
 			} else {
 				std::cerr << "ERROR: unknown folding instruction '" << tok << "'." << std::endl;
