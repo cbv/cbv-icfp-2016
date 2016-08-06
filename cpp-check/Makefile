@@ -12,7 +12,7 @@ ifeq ($(UNAME),Linux)
 endif
 
 
-all : check get-rect
+all : check get-rect foldup
 
 objs :
 	mkdir -p objs
@@ -24,4 +24,7 @@ check : objs/check.o objs/structures.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
 get-rect : objs/get-rect.o objs/structures.o
+	$(CPP) $^ -o $@ -lgmp -lCGAL
+
+foldup : objs/foldup.o objs/structures.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
