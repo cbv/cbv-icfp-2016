@@ -52,7 +52,7 @@ CGAL::Gmpq check_solution(Problem const &problem, Solution const &solution) {
 
 int main(int argc, char **argv) {
 	if (argc != 3) {
-		std::cout << "Usage:\n\t./check <problem> <solution>\n" << std::endl;
+		std::cerr << "Usage:\n\t./check <problem> <solution>\n" << std::endl;
 		return 1;
 	}
 
@@ -61,22 +61,22 @@ int main(int argc, char **argv) {
 		std::cerr << "Failed to read problem." << std::endl;
 		return 1;
 	}
-	std::cout << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
+	std::cerr << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
 
 	std::unique_ptr< Solution > solution = Solution::read(argv[2]);
 
-	std::cout << "Read solution with " << solution->source.size() << " vertices and " << solution->facets.size() << " facets." << std::endl;
+	std::cerr << "Read solution with " << solution->source.size() << " vertices and " << solution->facets.size() << " facets." << std::endl;
 
 	//Check solution for consistency with specification:
 	if (!solution->is_valid()) {
-		std::cout << "Solution isn't valid. Stopping." << std::endl;
+		std::cerr << "Solution isn't valid. Stopping." << std::endl;
 		return 1;
 	}
 
 	//Intersect solution with problem silhouette:
 	auto score = check_solution(*problem, *solution);
 
-	std::cout << "Score: " << score << " ~= " << CGAL::to_double(score) << std::endl;
+	std::cerr << "Score: " << score << " ~= " << CGAL::to_double(score) << std::endl;
 
 	return 0;
 }

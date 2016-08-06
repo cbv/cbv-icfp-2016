@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
-		std::cout << "Usage:\n./show <solution|problem>\n (Will try to parse as solution and problem.)" << std::endl;
+		std::cerr << "Usage:\n./show <solution|problem>\n (Will try to parse as solution and problem.)" << std::endl;
 		return 1;
 	}
 	std::unique_ptr< Solution > solution = Solution::read(argv[1]);
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 		instructions_file = argv[2];
 		out_file = argv[3];
 	} else {
-		std::cout << "Usage:\n./foldup [in.solution] instructions.folds out.solution\n" << std::endl;
+		std::cerr << "Usage:\n./foldup [in.solution] instructions.folds out.solution\n" << std::endl;
 		return 1;
 	}
 */

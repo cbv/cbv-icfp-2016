@@ -15,7 +15,7 @@ K::Segment_2 extend (const K::Segment_2& seg) {
 		diff = seg.max().x() - seg.min().x();
 	}
 	scale = bound / diff;
-	std::cout << "Scaling " << seg << " by " << scale << "." << std::endl;
+	std::cerr << "Scaling " << seg << " by " << scale << "." << std::endl;
 	return K::Segment_2(seg.source() - vec * scale, seg.source() + vec * scale);
 }
 */
@@ -32,7 +32,7 @@ bool fold_excess (State& state, const CGAL::Polygon_2<K>& goal) {
 
 int main(int argc, char **argv) {
 	if (argc != 2 && argc != 3) {
-		std::cout << "Usage:\n\t./get-convex <problem> [solution-to-write]\n" << std::endl;
+		std::cerr << "Usage:\n\t./get-convex <problem> [solution-to-write]\n" << std::endl;
 		return 1;
 	}
 
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 		std::cerr << "Failed to read problem." << std::endl;
 		return 1;
 	}
-	std::cout << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
+	std::cerr << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
 
 	//Idea: find closest bounding rectangle of silhouette, then fold that rectangle.
 
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 	std::vector< K::Point_2 > hull;
 	CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter( hull ));
 	CGAL::Polygon_2<K> hull_poly(hull.begin(), hull.end());
-	std::cout << "Hull has " << hull.size() << " points." << std::endl;
+	std::cerr << "Hull has " << hull.size() << " points." << std::endl;
 
 	// get directions
 	std::vector< K::Vector_2 > x_dirs = unit_vectors();
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 			mpz_clear(num);
 			mpz_clear(den);
 		}
-		std::cout << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
+		std::cerr << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
 	}
 
 	auto get_score = [&hull_poly,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
@@ -142,23 +142,23 @@ int main(int argc, char **argv) {
 
 
 	auto get_fold = [&hull_poly](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
-		//std::cout << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
+		//std::cerr << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
 		K::Vector_2 y = x.perpendicular(CGAL::COUNTERCLOCKWISE);
 		Facet square;
 		square.source = {K::Point_2(0,0), K::Point_2(1,0), K::Point_2(1,1), K::Point_2(0,1)};
 		square.destination = {min, min+x, min+x+y, min+y};
-		//std::cout << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
-		//std::cout << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
+		//std::cerr << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
+		//std::cerr << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
 		square.compute_xf();
 		State state;
 		state.push_back (square);
-		// std::cout << "Ready to fold:" << std::endl;
+		// std::cerr << "Ready to fold:" << std::endl;
 		uint_fast32_t counter = 0;
 		while (fold_excess(state, hull_poly)) {
 			++counter;
-			std::cout << "Folded " << counter << " times." << std::endl;
+			std::cerr << "Folded " << counter << " times." << std::endl;
 		}
-		std::cout << "Folded " << counter << " times in total." << std::endl;
+		std::cerr << "Folded " << counter << " times in total." << std::endl;
 		return state;
 	};
 
@@ -217,13 +217,13 @@ int main(int argc, char **argv) {
 	}
 
 	if (exact_found) {
-		std::cout << "Found exact wrapping. This is as good as we can do." << std::endl;
+		std::cerr << "Found exact wrapping. This is as good as we can do." << std::endl;
 	} else {
-		std::cout << "Using approximate wrapping." << std::endl;
+		std::cerr << "Using approximate wrapping." << std::endl;
 	}
 	State best_wrap = get_fold(best.x, best.min, best.max);
 	if (argc == 3) {
-		std::cout << "(Writing to " << argv[2] << ")" << std::endl;
+		std::cerr << "(Writing to " << argv[2] << ")" << std::endl;
 		std::ofstream file(argv[2]);
 		best_wrap.print_solution(file);
 	} else {

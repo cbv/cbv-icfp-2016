@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv) {
 	if (argc != 2 && argc != 3) {
-		std::cout << "Usage:\n\t./get-rect <problem> [solution-to-write]\n" << std::endl;
+		std::cerr << "Usage:\n\t./get-rect <problem> [solution-to-write]\n" << std::endl;
 		return 1;
 	}
 
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 		std::cerr << "Failed to read problem." << std::endl;
 		return 1;
 	}
-	std::cout << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
+	std::cerr << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
 
 	//Idea: find closest bounding rectangle of silhouette, then fold that rectangle.
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 
 	CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter( hull ));
 
-	std::cout << "Hull has " << hull.size() << " points." << std::endl;
+	std::cerr << "Hull has " << hull.size() << " points." << std::endl;
 
 	//Given the way that the score is computed (and_area / or_area)
 	//it might actually make sense in some cases to avoid covering a portion of the figure.
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 			mpz_clear(num);
 			mpz_clear(den);
 		}
-		std::cout << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
+		std::cerr << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
 	}
 
 
@@ -155,8 +155,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	std::cout << "Best score was " << best_score << " at " << best.x << std::endl;
-	std::cout << "  box: " << best.min << " to " << best.max << std::endl;
+	std::cerr << "Best score was " << best_score << " at " << best.x << std::endl;
+	std::cerr << "  box: " << best.min << " to " << best.max << std::endl;
 
 	//zig-zag fold into proper-sized box:
 
@@ -215,12 +215,14 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	std::cout << " --- solution (score = " << best_score << ") --- \n" << out.str();
+	std::cerr << " --- solution (score = " << best_score << ") --- \n" << out.str();
 
 	if (argc == 3) {
-		std::cout << "(Writing to " << argv[2] << ")" << std::endl;
+		std::cerr << "(Writing to " << argv[2] << ")" << std::endl;
 		std::ofstream file(argv[2]);
 		file << out.str();
+	} else {
+		std::cout << out.str();
 	}
 
 

@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 		instructions_file = argv[2];
 		out_file = argv[3];
 	} else {
-		std::cout << "Usage:\n./foldup [in.solution] instructions.folds out.solution\n" << std::endl;
+		std::cerr << "Usage:\n./foldup [in.solution] instructions.folds out.solution\n" << std::endl;
 		return 1;
 	}
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 			std::cerr << "Error reading starting state from '" << in_file << "'." << std::endl;
 			return 1;
 		}
-		std::cout << "Starting with the folded state of '" << in_file << "'." << std::endl;
+		std::cerr << "Starting with the folded state of '" << in_file << "'." << std::endl;
 		for (auto const &facet : soln->facets) {
 			Facet f;
 			for (auto index : facet) {
@@ -65,17 +65,17 @@ int main(int argc, char **argv) {
 			state.emplace_back(f);
 		}
 	} else {
-		std::cout << "Starting with a square." << std::endl;
+		std::cerr << "Starting with a square." << std::endl;
 		state = make_square();
 	}
 
 	{
 		std::vector< K::Point_2 > marks;
-		std::cout << "Applying instructions from '" << instructions_file << "'." << std::endl;
+		std::cerr << "Applying instructions from '" << instructions_file << "'." << std::endl;
 		std::ifstream inst(instructions_file);
 		std::string line;
 		while (std::getline(inst, line)) {
-			std::cout <<  "> " << line << std::endl;
+			std::cerr <<  "> " << line << std::endl;
 			for (uint32_t i = 0; i < line.size(); ++i) {
 				if (line[i] == '#') {
 					line = line.substr(0, i);
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 					return 1;
 				}
 				state.fold_dest(K::Point_2(x1, y1), K::Point_2(x2, y2));
-				std::cout << "  after fold, have " << state.size() << " facets." << std::endl;
+				std::cerr << "  after fold, have " << state.size() << " facets." << std::endl;
 			} else if (tok == "unfold") {
 				state.unfold();
 				marks.clear();
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	std::cout << "Now have " << state.size() << " facets." << std::endl;
+	std::cerr << "Now have " << state.size() << " facets." << std::endl;
 
 	auto pp = [](CGAL::Gmpq const &q) -> std::string {
 		std::ostringstream str;
@@ -132,15 +132,14 @@ int main(int argc, char **argv) {
 
 	//DEBUG:
 	for (auto const &facet : state) {
-		std::cout << "   ------\n";
+		std::cerr << "   ------\n";
 		for (uint32_t i = 0; i < facet.source.size(); ++i) {
 			std::string src_name = pp(facet.source[i].x()) + "," + pp(facet.source[i].y());
 			std::string dst_name = pp(facet.destination[i].x()) + "," + pp(facet.destination[i].y());
-			std::cout << "     " << src_name << " -> " << dst_name << "\n";
+			std::cerr << "     " << src_name << " -> " << dst_name << "\n";
 		}
-		std::cout.flush();
 	}
-	std::cout << "------\n";
+	std::cerr << "------\n";
 
 	std::ostringstream out;
 	state.print_solution(out);
