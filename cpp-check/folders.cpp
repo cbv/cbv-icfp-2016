@@ -19,10 +19,27 @@ void Facet::compute_xf() {
 		xf[2] = p2v(destination[0]) - (source[0].x() * xf[0] + source[0].y() * xf[1]);
 		flipped = false;
 	} else {
+		assert(source[1] != source[0]);
 		K::Vector_2 from_x = source[1] - source[0];
 		K::Vector_2 to_x = destination[1] - destination[0];
-		K::Vector_2 from_y(-from_x.y(), from_x.x());
-		K::Vector_2 to_y(-to_x.y(), to_x.x());
+		K::Vector_2 from_y = from_x.perpendicular(CGAL::COUNTERCLOCKWISE);
+		K::Vector_2 to_y = to_x.perpendicular(CGAL::COUNTERCLOCKWISE);
+
+		//check if transform needs mirroring by looking for non-collinear boundary points:
+		for (uint32_t i = 2; i < source.size(); ++i) {
+			auto s = (source[i] - source[0]) * from_y;
+			if (s == 0) continue;
+			auto d = (destination[i] - destination[0]) * to_y;
+			if (s == d) {
+				flipped = false;
+			} else if (s == -d) {
+				to_y = -to_y;
+				flipped = true;
+			} else {
+				assert(s == d || s == -d);
+			}
+			break;
+		}
 
 		CGAL::Gmpq len2 = from_x * from_x;
 
@@ -34,27 +51,13 @@ void Facet::compute_xf() {
 			to_x.x() * from_x.y() + to_y.x() * from_y.y(),
 			to_x.y() * from_x.y() + to_y.y() * from_y.y()
 			) / len2;
-		xf[2] = p2v(destination[0]) - (source[0].x() * xf[0] + source[0].y() * xf[1]);
+		xf[2] = (destination[0] - CGAL::ORIGIN) - (source[0].x() * xf[0] + source[0].y() * xf[1]);
 
-		int32_t sign = 0;
-		for (uint32_t i = 2; i < source.size(); ++i) {
-			K::Vector_2 temp = xf[0] * source[i].x() + xf[1] * source[i].y() + xf[2];
-			assert(temp.x() == destination[i].x());
-			if (temp.y() == destination[i].y()) {
-				if (sign == 0) sign = 1;
-				assert(sign == 1);
-			} else if (temp.y() == -destination[i].y()) {
-				if (sign == 0) sign = -1;
-				assert(sign == -1);
-			} else {
-				assert(temp.y() == destination[i].y());
-			}
-		}
-		if (sign == -1) {
-			xf[1] = -xf[1];
-			flipped = true;
-		} else {
-			flipped = false;
+		assert(xf[0] * source[0].x() + xf[1] * source[0].y() + xf[2] == destination[0] - CGAL::ORIGIN);
+		assert(xf[0] * source[1].x() + xf[1] * source[1].y() + xf[2] == destination[1] - CGAL::ORIGIN);
+
+		for (uint32_t i = 0; i < source.size(); ++i) {
+			assert(xf[0] * source[i].x() + xf[1] * source[i].y() + xf[2] == destination[i] - CGAL::ORIGIN);
 		}
 	}
 }
