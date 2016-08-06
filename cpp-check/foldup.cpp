@@ -15,6 +15,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 
 struct Facet {
 	std::vector< K::Point_2 > source;
@@ -91,7 +92,209 @@ void Facet::compute_xf() {
 
 struct State : public std::vector< Facet > {
 	void fold_dest(K::Point_2 const &a, K::Point_2 const &b);
+	void unfold();
+	void refold(std::vector< K::Point_2 > const &marks);
 };
+
+void State::unfold() {
+	refold(std::vector< K::Point_2 >());
+}
+
+void State::refold(std::vector< K::Point_2 > const &marks) {
+	struct Edge {
+		enum Tag {
+			Outside,
+			Flat,
+			Fold
+		} tag = Outside;
+		K::Point_2 a;
+		K::Point_2 b;
+		uint32_t fa = -1U;
+		uint32_t fb = -1U;
+	};
+	std::vector< Edge > edges;
+	std::unordered_map< std::string, uint32_t > edge_idx;
+	auto add_edge = [&](K::Point_2 const &a, K::Point_2 const &b, uint32_t f) {
+		assert(a.x() < b.x() || (a.x() == b.x() && a.y() <= b.y()));
+		std::ostringstream name;
+		name << a << "," << b;
+		uint32_t idx = edge_idx.insert(std::make_pair(name.str(), edges.size())).first->second;
+		if (idx == edges.size()) {
+			edges.emplace_back();
+			edges.back().a = a;
+			edges.back().b = b;
+			edges.back().fa = f;
+		} else {
+			assert(idx < edges.size());
+			assert(edges[idx].a == a);
+			assert(edges[idx].b == b);
+			assert(edges[idx].tag == Edge::Outside);
+			edges[idx].tag = Edge::Flat;
+			assert(edges[idx].fa != -1U);
+			assert(edges[idx].fb == -1U);
+			edges[idx].fb = f;
+		}
+		assert(edges[idx].fa == f || edges[idx].fb == f);
+	};
+	for (auto const &facet : *this) {
+		for (uint32_t i = 0; i < facet.source.size(); ++i) {
+			auto const &a = facet.source[i];
+			auto const &b = facet.source[(i+1)%facet.source.size()];
+			if (a.x() < b.x() || (a.x() == b.x() && a.y() <= b.y())) {
+				add_edge(a,b, &facet - &((*this)[0]));
+			} else {
+				add_edge(b,a, &facet - &((*this)[0]));
+			}
+		}
+	}
+	//sanity check outside edges:
+	for (auto const &e : edges) {
+		if (e.tag == Edge::Outside) {
+			assert(
+			       (e.a.x() == 0 && e.b.x() == 0)
+				|| (e.a.x() == 1 && e.b.x() == 1)
+				|| (e.a.y() == 0 && e.b.y() == 0)
+				|| (e.a.y() == 1 && e.b.y() == 1)
+			);
+		}
+		//std::cout << "Edge '" << e.a << "," << e.b << "' has " << e.fa << " and " << int32_t(e.fb) << std::endl; //DEBUG
+	}
+
+	auto mark = [&edges](std::vector< K::Point_2 > const &pts, Edge::Tag mark) {
+		for (auto const &pt : pts) {
+			Edge *close = nullptr;
+			CGAL::Gmpq close_len2 = 0;
+			for (auto &e : edges) {
+				K::Line_2 line(e.a, e.b);
+				K::Vector_2 to_line = pt - line.projection(pt);
+				CGAL::Gmpq len2 = to_line * to_line;
+				if (close == nullptr || len2 < close_len2) {
+					close_len2 = len2;
+					close = &e;
+				}
+			}
+			if (!close) {
+				std::cerr << "WARNING: mark at " << pt << " was far from everything." << std::endl;
+			} else {
+				if (close->tag == Edge::Flat) {
+					close->tag = mark;
+				} else if (close->tag == Edge::Outside) {
+					std::cerr << "WARNING: mark at " << pt << " trying to mark outside edge." << std::endl;
+				} else if (close->tag == mark) {
+					std::cerr << "WARNING: mark at " << pt << " is marking an edge twice." << std::endl;
+				} else {
+					std::cerr << "WARNING: mark at " << pt << " is contradicting a different marking." << std::endl;
+				
+				}
+			}
+		}
+	};
+
+	mark(marks, Edge::Fold);
+
+	//iterate through facets and transform based on folds:
+	std::unordered_set< uint32_t > done;
+	std::vector< uint32_t > to_expand;
+	{
+		(*this)[0].destination = (*this)[0].source;
+		(*this)[0].compute_xf();
+		done.insert(0);
+		to_expand.push_back(0);
+	}
+	while (!to_expand.empty()) {
+		uint32_t f_index = to_expand.back();
+		to_expand.pop_back();
+		assert(done.count(f_index));
+		assert(f_index < this->size());
+		auto &f = (*this)[f_index];
+		//so f's xf is already set, but we should check all the neighbors based on the marks:
+		for (uint32_t i = 0; i < f.source.size(); ++i) {
+			auto const &a = f.source[i];
+			auto const &b = f.source[(i+1)%f.source.size()];
+			std::ostringstream name;
+			if (a.x() < b.x() || (a.x() == b.x() && a.y() <= b.y())) {
+				name << a << "," << b;
+			} else {
+				name << b << "," << a;
+			}
+			//std::cout << "Facet " << f_index << " found edge " << name.str() << std::endl; //DEBUG
+			auto ii = edge_idx.find(name.str());
+			assert(ii != edge_idx.end());
+			assert(ii->second < edges.size());
+			auto const &edge = edges[ii->second];
+			uint32_t other_index = -1U;
+			if (edge.fa == f_index) {
+				other_index = edge.fb;
+			} else if (edge.fb == f_index) {
+				other_index = edge.fa;
+			} else {
+				assert(0 && "facet must participate in edge");
+			}
+			assert(other_index != f_index);
+			if (other_index == -1U) {
+				assert(edge.tag == Edge::Outside);
+				continue;
+			}
+			assert(other_index < this->size());
+
+			K::Vector_2 other_xf[3];
+			if (edge.tag == Edge::Flat) {
+				other_xf[0] = f.xf[0];
+				other_xf[1] = f.xf[1];
+				other_xf[2] = f.xf[2];
+			} else if (edge.tag == Edge::Fold) {
+				K::Vector_2 along = b - a;
+				K::Vector_2 perp(-along.y(), along.x());
+
+				K::Vector_2 flip_xf[3];
+				auto len2 = along * along;
+				flip_xf[0] = K::Vector_2(
+					along.x() * along.x() + -perp.x() * perp.x(),
+					along.y() * along.x() + -perp.y() * perp.x()
+					) / len2;
+				flip_xf[1] = K::Vector_2(
+					along.x() * along.y() + -perp.x() * perp.y(),
+					along.y() * along.y() + -perp.y() * perp.y()
+					) / len2;
+				flip_xf[2] = p2v(a) - (flip_xf[0] * a.x() + flip_xf[1] * a.y());
+
+				assert(flip_xf[0] * (b + perp).x() + flip_xf[1] * (b + perp).y() + flip_xf[2] == p2v(b - perp));
+				other_xf[0]= flip_xf[0] * f.xf[0].x() + flip_xf[1] * f.xf[0].y();
+				other_xf[1] = flip_xf[0] * f.xf[1].x() + flip_xf[1] * f.xf[1].y();
+				other_xf[2] = flip_xf[0] * f.xf[2].x() + flip_xf[1] * f.xf[2].y() + flip_xf[2];
+			} else {
+				assert(0 && "That should be it in terms of tags.");
+			}
+
+			auto &other = (*this)[other_index];
+			if (done.count(other_index)) {
+				if (!( other.xf[0] == other_xf[0]
+					&& other.xf[1] == other_xf[1]
+					&& other.xf[2] == other_xf[2])) {
+					std::cerr << "ERROR: inconsistent marking; can't refold." << std::endl;
+					exit(1);
+				}
+			} else {
+				other.xf[0] = other_xf[0];
+				other.xf[1] = other_xf[1];
+				other.xf[2] = other_xf[2];
+				other.destination.clear();
+				for (auto const &pt : other.source) {
+					other.destination.emplace_back(
+						K::Point_2(0,0) +
+						other.xf[0] * pt.x() + other.xf[1] * pt.y() + other.xf[2]
+					);
+				}
+				done.insert(other_index);
+				to_expand.push_back(other_index);
+			}
+
+
+		}
+	}
+
+	assert(done.size() == this->size());
+}
 
 void State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 	assert(a != b);
@@ -298,11 +501,18 @@ int main(int argc, char **argv) {
 	}
 
 	{
+		std::vector< K::Point_2 > marks;
 		std::cout << "Applying instructions from '" << instructions_file << "'." << std::endl;
 		std::ifstream inst(instructions_file);
 		std::string line;
 		while (std::getline(inst, line)) {
 			std::cout <<  "> " << line << std::endl;
+			for (uint32_t i = 0; i < line.size(); ++i) {
+				if (line[i] == '#') {
+					line = line.substr(0, i);
+					break;
+				}
+			}
 			std::istringstream str(line);
 			std::string tok;
 			if (!(str >> tok)) continue;
@@ -316,8 +526,22 @@ int main(int argc, char **argv) {
 				state.fold_dest(K::Point_2(x1, y1), K::Point_2(x2, y2));
 				std::cout << "  after fold, have " << state.size() << " facets." << std::endl;
 			} else if (tok == "unfold") {
+				state.unfold();
+				marks.clear();
 			} else if (tok == "mark") {
-			} else if (tok == "fold-by-marks") {
+				CGAL::Gmpq x,y;
+				char comma;
+				if (!(str >> x >> comma >> y) || comma != ',') {
+					std::cerr << "For 'mark' instruction, expecting x,y" << std::endl;
+					return 1;
+				}
+				marks.emplace_back(x,y);
+			} else if (tok == "refold") {
+				if (marks.empty()) {
+					std::cerr << "WARNING: refolding with no marks." << std::endl;
+				}
+				state.refold(marks);
+				marks.clear();
 			} else {
 				std::cerr << "ERROR: unknown folding instruction '" << tok << "'." << std::endl;
 			}
@@ -335,7 +559,6 @@ int main(int argc, char **argv) {
 		return str.str();
 	};
 
-/*
 	//DEBUG:
 	for (auto const &facet : state) {
 		std::cout << "   ------\n";
@@ -347,7 +570,6 @@ int main(int argc, char **argv) {
 		std::cout.flush();
 	}
 	std::cout << "------\n";
-*/
 
 	//print out solution -- need to de-duplicate verts for this.
 	std::unordered_map< std::string, uint32_t > source_inds;
