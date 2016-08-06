@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 	//Intersect solution with problem silhouette:
 	auto score = check_solution(*problem, *solution);
 
-	std::cerr << "Score: " << score << " ~= " << CGAL::to_double(score) << std::endl;
+	std::cout << "Score: " << score << " ~= " << CGAL::to_double(score) << std::endl;
 
 	return 0;
 }
