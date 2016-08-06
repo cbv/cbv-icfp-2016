@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 		//std::cerr << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
 		auto center = min + (max - min)/2;
 		Facet square;
-		make_centered_square(K::Vector_2(1,0),K::Point_2(1/2,1/2),back_inserter(square.source));
+		make_centered_square(K::Vector_2(1,0),K::Point_2(0.5,0.5),back_inserter(square.source));
 		make_centered_square(x,center,back_inserter(square.destination));
 		//std::cerr << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
 		//std::cerr << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
