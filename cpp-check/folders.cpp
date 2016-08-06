@@ -6,10 +6,6 @@
 
 //------------- Facet --------------------
 
-K::Vector_2 p2v(K::Point_2 const &p) {
-	return p - CGAL::ORIGIN;
-}
-
 void Facet::compute_xf() {
 	assert(source.size() == destination.size());
 	if (source.size() == 0) {

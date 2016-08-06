@@ -3,7 +3,13 @@
 #include "base.hpp"
 #include <CGAL/Polygon_with_holes_2.h>
 
-K::Vector_2 rotate_left90 (const K::Vector_2 &vec);
+inline K::Vector_2 p2v(K::Point_2 const &p) {
+	return p - CGAL::ORIGIN;
+}
+
+inline K::Vector_2 prep (const K::Vector_2 &vec) {
+	return vec.perpendicular(CGAL::COUNTERCLOCKWISE);
+}
 
 CGAL::Gmpq polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh);
 

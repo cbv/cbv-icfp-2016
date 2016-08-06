@@ -34,7 +34,7 @@ bool fold_excess (State& state, const CGAL::Polygon_2<K>& goal) {
 
 template<typename OutputIterator>
 void make_centered_square (const K::Vector_2 &x, const K::Point_2 &center, OutputIterator out) {
-	K::Vector_2 y = rotate_left90(x);
+	K::Vector_2 y = prep(x);
 	*(out++) = center-x/2-y/2;
 	*(out++) = center+x/2-y/2;
 	*(out++) = center+x/2+y/2;
@@ -101,7 +101,6 @@ int main(int argc, char **argv) {
 
 	auto get_fold = [&hull](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
 		//std::cerr << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
-		K::Vector_2 y = rotate_left90(x);
 		auto center = min + (max - min)/2;
 		Facet square;
 		make_centered_square(K::Vector_2(1,0),K::Point_2(1/2,1/2),back_inserter(square.source));

@@ -4,10 +4,6 @@
 #include <CGAL/Gmpq.h>
 #include <CGAL/Polygon_set_2.h>
 
-K::Vector_2 rotate_left90 (const K::Vector_2 &vec) {
-	return vec.perpendicular(CGAL::COUNTERCLOCKWISE);
-}
-
 K::FT polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh) {
 	assert(!pwh.is_unbounded());
 	auto ret = pwh.outer_boundary().area();

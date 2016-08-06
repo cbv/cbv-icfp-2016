@@ -71,7 +71,6 @@ if __name__ == "__main__":
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
 
-
     # read the file and get its hash
     solution_string = open(solfile, "r").read()
     hasher = hashlib.new("sha256")
@@ -88,18 +87,22 @@ if __name__ == "__main__":
 
     symlinkfile = os.path.join(outdir, "best_submitted")
 
-    should_submit = False
-    if not os.path.islink(symlinkfile):
-        should_submit = True
-    else:
+    should_submit = True
+    if os.path.islink(symlinkfile):
         old_best_submitted = os.readlink(symlinkfile)
         old_best_score = float(old_best_submitted.split('_')[1])
         if old_best_submitted == solution_name:
             # we've already submitted this
             eprint("We've already submitted this solution.")
             should_submit = False
-        elif approx_float >= old_best_score:
-            should_submit = True
+        elif approx_float < old_best_score:
+            eprint("We've already submitted a better solution for this problem.")
+            should_submit = False
+        elif approx_float == old_best_score:
+            # compare file sizes.
+            if os.stat(symlinkfile).st_size <= os.stat(outfile).st_size:
+                eprint("We've already submitted a smaller solution with the same score for this problem.")
+                should_submit = False
 
     if should_submit:
         eprint("submitting...")

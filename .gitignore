@@ -1,6 +1,8 @@
 .*.swp
+*~
 cpp-check/check
-cpp-check/get-rect
+cpp-check/show
+cpp-check/get-convex
 cpp-check/objs
 cpp-check/foldup
 *.dSYM
