@@ -2,7 +2,7 @@
 
 
 UNAME := $(shell uname)
-HEADERS := structures.hpp rotations.hpp folders.hpp
+HEADERS := structures.hpp rotations.hpp folders.hpp sha1.hpp
 
 ifeq ($(UNAME),Darwin)
 	CPP=clang++ -std=c++11 -Wall -Werror -g
@@ -38,7 +38,7 @@ get-convex : objs/get-convex.o objs/structures.o objs/rotations.o objs/folders.o
 foldup : objs/foldup.o objs/structures.o objs/folders.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
-search-trees : objs/search-trees.o objs/structures.o
+search-trees : objs/search-trees.o objs/structures.o objs/sha1.o objs/Viz1.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL $(SDL_LIBS)
 
 show : objs/show.o objs/Viz1.o objs/structures.o

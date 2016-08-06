@@ -7,14 +7,14 @@ import os
 f = open('temp.folds', 'w')
 
 def rf():
-	den = random.randint(1,10)
+	den = random.randint(1,13)
 	num = random.randint(0,den)
 	return str(num) + '/' + str(den)
 
-f.write('fold 0,1/2 1,1/2\n')
+#f.write('fold 0,1/2 1,1/2\n')
 f.write('fold 0,1/4 1,13/24\n')
 
-for x in range(0,random.randint(1,10)):
+for x in range(0,random.randint(1,15)):
 	f.write('fold ' + rf() + ',' + rf() + ' ' + rf() + ',' + rf() + '\n')
 
 f.close()
