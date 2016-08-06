@@ -77,6 +77,10 @@ if __name__ == "__main__":
     hasher.update(solution_string.encode("utf-8"))
     hash = hasher.hexdigest()[:16]
 
+    if len(solution_string) > 5000:
+        eprint("Solution is larger than 5000 bytes and therefore invalid.")
+        exit(1)
+
     solution_name = "solution_{}_{}".format(approx, hash)
     outfile = os.path.join(outdir, solution_name)
 
@@ -89,6 +93,8 @@ if __name__ == "__main__":
 
     should_submit = True
     if os.path.islink(symlinkfile):
+        old_size = os.stat(symlinkfile).st_size
+        new_size = os.stat(outfile).st_size
         old_best_submitted = os.readlink(symlinkfile)
         old_best_score = float(old_best_submitted.split('_')[1])
         if old_best_submitted == solution_name:
@@ -98,11 +104,9 @@ if __name__ == "__main__":
         elif approx_float < old_best_score:
             eprint("We've already submitted a better solution for this problem.")
             should_submit = False
-        elif approx_float == old_best_score:
-            # compare file sizes.
-            if os.stat(symlinkfile).st_size <= os.stat(outfile).st_size:
-                eprint("We've already submitted a smaller solution with the same score for this problem.")
-                should_submit = False
+        elif approx_float == old_best_score and old_size <= new_size:
+            eprint("We've already submitted a smaller solution with the same score for this problem.")
+            should_submit = False
 
     if should_submit:
         eprint("submitting...")
