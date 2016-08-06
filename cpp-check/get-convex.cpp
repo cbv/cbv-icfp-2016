@@ -144,11 +144,9 @@ int main(int argc, char **argv) {
 	auto get_fold = [&hull_poly](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
 		//std::cout << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
 		K::Vector_2 y = x.perpendicular(CGAL::COUNTERCLOCKWISE);
-		K::Point_2 mid = min + (max - min) / 2;
-		K::Point_2 midpoint = CGAL::ORIGIN + mid.x() * x + mid.y() * y;
 		Facet square;
 		square.source = {K::Point_2(0,0), K::Point_2(1,0), K::Point_2(1,1), K::Point_2(0,1)};
-		square.destination = {midpoint-x/2-y/2, midpoint+x/2-y/2, midpoint+x/2+y/2, midpoint-x/2+y/2};
+		square.destination = {min, min+x, min+x+y, min+y};
 		//std::cout << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
 		//std::cout << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
 		square.compute_xf();
@@ -163,12 +161,13 @@ int main(int argc, char **argv) {
 		std::cout << "Folded " << counter << " times in total." << std::endl;
 		return state;
 	};
-		
+
 	CGAL::Gmpq best_score = 0;
 	struct {
 		K::Vector_2 x;
 		K::Point_2 min, max;
 	} best;
+	bool exact_found = false;
 	for (auto pass : {'e', '~'}) //in first pass, look for an exact wrapping, in second pass check approximate
 	for (auto const &x_dir : x_dirs) {
 		assert(x_dir * x_dir == 1);
@@ -200,11 +199,12 @@ int main(int argc, char **argv) {
 			fits = false;
 		}
 		if (fits) {
-			std::cout << "Found exact wrapping. This is as good as we can do." << std::endl;
-			State score = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
+			best.x = x_dir;
+			best.min = K::Point_2(min_x, min_y);
+			best.max = K::Point_2(max_x, max_y);
 			//this should be as good as it can be -- it should cover the hull.
-			score.print_solution("temp.dump");
-			return 0;
+			exact_found = true;
+			goto outer;
 		} else if (pass == '~') {
 			auto score = get_score(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
 			if (score > best_score) {
@@ -215,21 +215,20 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	std::cout << "Using approximate wrapping." << std::endl;
-	{
-		State wrap = get_fold(best.x, best.min, best.max);
-		wrap.print_solution("temp.dump");
+outer:
+	if (exact_found) {
+		std::cout << "Found exact wrapping. This is as good as we can do." << std::endl;
+	} else {
+		std::cout << "Using approximate wrapping." << std::endl;
 	}
-
-/*
-
+	State best_wrap = get_fold(best.x, best.min, best.max);
 	if (argc == 3) {
 		std::cout << "(Writing to " << argv[2] << ")" << std::endl;
 		std::ofstream file(argv[2]);
-		// file << out.str();
+		best_wrap.print_solution(file);
+	} else {
+		best_wrap.print_solution(std::cout);
 	}
-*/
-
 
 	return 0;
 }
