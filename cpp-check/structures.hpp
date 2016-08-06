@@ -1,12 +1,8 @@
 #pragma once
 
-#include <CGAL/Gmpq.h>
-#include <CGAL/Cartesian.h>
+#include "base.hpp"
+
 #include <CGAL/Polygon_set_2.h>
-
-#include <memory>
-
-typedef CGAL::Cartesian< CGAL::Gmpq > K;
 
 struct Problem {
 	std::vector< std::vector< K::Point_2 > > silhouette;

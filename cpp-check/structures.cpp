@@ -1,4 +1,7 @@
 #include "structures.hpp"
+#include "utils.hpp"
+
+#include <CGAL/Polygon_set_2.h>
 
 #include <iostream>
 #include <fstream>
@@ -88,20 +91,7 @@ K::FT Problem::get_score(const CGAL::Polygon_set_2<K>& a) const {
 	CGAL::Polygon_set_2< K > or_set = get_silhouette();
 	or_set.join(a);
 
-	auto polygon_with_holes_area = [](CGAL::Polygon_with_holes_2< K > const &pwh) -> CGAL::Gmpq {
-		assert(!pwh.is_unbounded());
-		auto ret = pwh.outer_boundary().area();
-		assert(ret >= 0);
-		for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-			auto ha = hi->area();
-			assert(ha <= 0);
-			ret += ha;
-		}
-		assert(ret >= 0);
-		return ret;
-	};
-
-	auto polygon_set_area = [&polygon_with_holes_area](CGAL::Polygon_set_2< K > const &ps) -> CGAL::Gmpq {
+	auto polygon_set_area = [](CGAL::Polygon_set_2< K > const &ps) -> CGAL::Gmpq {
 		std::list< CGAL::Polygon_with_holes_2< K > > res;
 		ps.polygons_with_holes( std::back_inserter( res ) );
 		CGAL::Gmpq ret = 0;

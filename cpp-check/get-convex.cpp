@@ -1,8 +1,10 @@
+#include "utils.hpp"
 #include "structures.hpp"
 #include "rotations.hpp"
 #include "folders.hpp"
 
 #include <CGAL/convex_hull_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
 
 /* fold_dest already does this, weirdly enough:
 K::Segment_2 extend (const K::Segment_2& seg) {
@@ -30,6 +32,15 @@ bool fold_excess (State& state, const CGAL::Polygon_2<K>& goal) {
 	return old_facets != state.size();
 }
 
+template<typename OutputIterator>
+void make_centered_square (const K::Vector_2 &x, const K::Point_2 &center, OutputIterator out) {
+	K::Vector_2 y = prep(x);
+	*(out++) = center-x/2-y/2;
+	*(out++) = center+x/2-y/2;
+	*(out++) = center+x/2+y/2;
+	*(out++) = center-x/2+y/2;
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2 && argc != 3) {
 		std::cerr << "Usage:\n\t./get-convex <problem> [solution-to-write]\n" << std::endl;
@@ -50,9 +61,8 @@ int main(int argc, char **argv) {
 		points.insert(points.end(), poly.begin(), poly.end());
 	}
 
-	std::vector< K::Point_2 > hull;
+	CGAL::Polygon_2<K> hull;
 	CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter( hull ));
-	CGAL::Polygon_2<K> hull_poly(hull.begin(), hull.end());
 	std::cerr << "Hull has " << hull.size() << " points." << std::endl;
 
 	// get directions
@@ -60,93 +70,41 @@ int main(int argc, char **argv) {
 	
 
 	{ //add directions that can be made rational:
-		uint_fast32_t added = 0;
-		uint_fast32_t skipped = 0;
-		for (auto ei = hull_poly.edges_begin(); ei != hull_poly.edges_end(); ++ei) {
-			K::Vector_2 dir = ei->to_vector();
-			CGAL::Gmpq len2 = dir * dir;
-			CGAL::Gmpz num2 = len2.numerator();
-			CGAL::Gmpz den2 = len2.denominator();
-			mpz_t num,den;
-			mpz_init(num);
-			mpz_init(den);
-			if (mpz_root(num, num2.mpz(), 2) != 0 && mpz_root(den, den2.mpz(), 2)) {
-				x_dirs.emplace_back((dir / CGAL::Gmpz(num)) * CGAL::Gmpz(den));
-				++added;
+		uint_fast32_t exact = 0;
+		uint_fast32_t inexact = 0;
+		for (auto ei = hull.edges_begin(); ei != hull.edges_end(); ++ei) {
+			auto pair = pythagorean_unit_approx(ei->to_vector());
+			if (pair.first) {
+				++exact;
 			} else {
-				++skipped;
+				++inexact;
+				std::cerr << "Approximate " << *ei << " by " << pair.second << "." << std::endl;
 			}
-			mpz_clear(num);
-			mpz_clear(den);
+			x_dirs.emplace_back(pair.second);
 		}
-		std::cerr << "Addded " << added << " edge directions to test directions, skipped " << skipped << "." << std::endl;
+		std::cerr << "Addded " << exact << " exact directions and " << inexact << " inexact directions." << std::endl;
 	}
 
-	auto get_score = [&hull_poly,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
-		CGAL::Polygon_set_2< K > a = problem->get_silhouette();
-		CGAL::Polygon_2< K > b;
-
+	auto get_score = [&hull,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
+		CGAL::Polygon_2< K > square;
 		{ //build square from min/max:
-			K::Vector_2 y(-x.y(), x.x());
-			b.push_back(K::Point_2(0,0) + min.x() * x + min.y() * y);
-			b.push_back(K::Point_2(0,0) + max.x() * x + min.y() * y);
-			b.push_back(K::Point_2(0,0) + max.x() * x + max.y() * y);
-			b.push_back(K::Point_2(0,0) + min.x() * x + max.y() * y);
-			assert(b.orientation() == CGAL::COUNTERCLOCKWISE);
+			auto center = min + (max - min)/2;
+			make_centered_square(x, center, std::back_inserter(square));
+			assert(square.orientation() == CGAL::COUNTERCLOCKWISE);
 		}
-		assert(hull_poly.orientation() == CGAL::COUNTERCLOCKWISE);
-
-		CGAL::Polygon_set_2< K > a_and_b;
-		CGAL::Polygon_set_2< K > a_or_b;
-		a_and_b.join(hull_poly);
-		a_and_b.intersection(b);
-
-		a_and_b.intersection(a);
-
-
-		a_or_b.join(hull_poly);
-		a_or_b.intersection(b);
-
-		a_or_b.join(a);
-
-
-		auto polygon_with_holes_area = [](CGAL::Polygon_with_holes_2< K > const &pwh) -> CGAL::Gmpq {
-			assert(!pwh.is_unbounded());
-			auto ret = pwh.outer_boundary().area();
-			assert(ret >= 0);
-			for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-				auto ha = hi->area();
-				assert(ha <= 0);
-				ret += ha;
-			}
-			assert(ret >= 0);
-			return ret;
-		};
-
-		auto polygon_set_area = [&polygon_with_holes_area](CGAL::Polygon_set_2< K > const &ps) -> CGAL::Gmpq {
-			std::list< CGAL::Polygon_with_holes_2< K > > res;
-			ps.polygons_with_holes( std::back_inserter( res ) );
-			CGAL::Gmpq ret = 0;
-			for (auto const &poly : res) {
-				ret += polygon_with_holes_area(poly);
-			}
-			assert(ret >= 0);
-			return ret;
-		};
-
-		auto and_area = polygon_set_area(a_and_b);
-		auto or_area = polygon_set_area(a_or_b);
-
-		return and_area / or_area;
+		assert(hull.orientation() == CGAL::COUNTERCLOCKWISE);
+		CGAL::Polygon_set_2<K> final_shape;
+		final_shape.join(hull); final_shape.intersection(square);
+		return problem->get_score(final_shape);
 	};
 
 
-	auto get_fold = [&hull_poly](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
+	auto get_fold = [&hull](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
 		//std::cerr << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
-		K::Vector_2 y = x.perpendicular(CGAL::COUNTERCLOCKWISE);
+		auto center = min + (max - min)/2;
 		Facet square;
-		square.source = {K::Point_2(0,0), K::Point_2(1,0), K::Point_2(1,1), K::Point_2(0,1)};
-		square.destination = {min, min+x, min+x+y, min+y};
+		make_centered_square(K::Vector_2(1,0),K::Point_2(0.5,0.5),back_inserter(square.source));
+		make_centered_square(x,center,back_inserter(square.destination));
 		//std::cerr << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
 		//std::cerr << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
 		square.compute_xf();
@@ -154,7 +112,7 @@ int main(int argc, char **argv) {
 		state.push_back (square);
 		// std::cerr << "Ready to fold:" << std::endl;
 		uint_fast32_t counter = 0;
-		while (fold_excess(state, hull_poly)) {
+		while (fold_excess(state, hull)) {
 			++counter;
 			std::cerr << "Folded " << counter << " times." << std::endl;
 		}
@@ -177,9 +135,9 @@ int main(int argc, char **argv) {
 		CGAL::Gmpq max_x = min_x;
 		CGAL::Gmpq min_y = y_dir * K::Vector_2(hull[0].x(), hull[0].y());
 		CGAL::Gmpq max_y = min_y;
-		for (auto const &pt : hull) {
-			CGAL::Gmpq x = x_dir * K::Vector_2(pt.x(), pt.y());
-			CGAL::Gmpq y = y_dir * K::Vector_2(pt.x(), pt.y());
+		for (auto vi = hull.vertices_begin(); vi != hull.vertices_end(); ++vi) {
+			CGAL::Gmpq x = x_dir * (*vi - CGAL::ORIGIN);
+			CGAL::Gmpq y = y_dir * (*vi - CGAL::ORIGIN);
 			if (x < min_x) min_x = x;
 			if (x > max_x) max_x = x;
 			if (y < min_y) min_y = y;
