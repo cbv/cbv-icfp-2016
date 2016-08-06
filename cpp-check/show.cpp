@@ -37,6 +37,9 @@ int main(int argc, char **argv) {
 	};
 
 	Viz1 viz(glm::uvec2(800, 400));
+	glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_BLEND);
+
 	viz.draw = [&](){
 		glm::vec2 src_min(std::numeric_limits< float >::infinity());
 		glm::vec2 src_max(-std::numeric_limits< float >::infinity());
@@ -54,6 +57,26 @@ int main(int argc, char **argv) {
 				dst_max = glm::max(dst_max, pt);
 			}
 		}
+		if (problem) {
+			for (auto const &poly : problem->silhouette) {
+				for (auto const &pt_ : poly) {
+					glm::vec2 pt = to_pt(pt_);
+					src_min = glm::min(src_min, pt);
+					src_max = glm::max(src_max, pt);
+				}
+			}
+			for (auto const &line : problem->skeleton) {
+				glm::vec2 a = to_pt(line.first);
+				glm::vec2 b = to_pt(line.second);
+				src_min = glm::min(src_min, a);
+				src_min = glm::min(src_min, b);
+				src_max = glm::max(src_max, a);
+				src_max = glm::max(src_max, b);
+			}
+			dst_min = src_min;
+			dst_max = src_max;
+		}
+
 
 		src_max += glm::vec2(0.1f);
 		src_min -= glm::vec2(0.1f);
@@ -74,7 +97,6 @@ int main(int argc, char **argv) {
 		glTranslatef(0.25f * viz.aspect * diameter - 0.5f * (src_max.x + src_min.x), - 0.5f * (src_max.y + src_min.y), 0.0f);
 
 		glBegin(GL_LINES);
-
 		if (solution)
 		for (auto const &f : solution->facets) {
 			for (uint32_t i = 0; i < f.size(); ++i) {
@@ -83,6 +105,17 @@ int main(int argc, char **argv) {
 				glColor3f(0.0f, 0.0f, 0.0f);
 				glVertex2f(a.x, a.y);
 				glVertex2f(b.x, b.y);
+			}
+		}
+		if (problem) {
+			for (auto const &poly : problem->silhouette) {
+				for (uint32_t i = 0; i < poly.size(); ++i) {
+					glm::vec2 a = to_pt(poly[i]);
+					glm::vec2 b = to_pt(poly[(i+1)%poly.size()]);
+					glColor3f(0.0f, 0.0f, 0.0f);
+					glVertex2f(a.x, a.y);
+					glVertex2f(b.x, b.y);
+				}
 			}
 		}
 		glEnd();
@@ -101,6 +134,27 @@ int main(int argc, char **argv) {
 				glVertex2f(a.x, a.y);
 				glVertex2f(b.x, b.y);
 			}
+		}
+
+		if (problem) {
+			for (auto const &line : problem->skeleton) {
+				glm::vec2 a = to_pt(line.first);
+				glm::vec2 b = to_pt(line.second);
+				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+				glVertex2f(a.x, a.y);
+				glVertex2f(b.x, b.y);
+			}
+
+			for (auto const &poly : problem->silhouette) {
+				for (uint32_t i = 0; i < poly.size(); ++i) {
+					glm::vec2 a = to_pt(poly[i]);
+					glm::vec2 b = to_pt(poly[(i+1)%poly.size()]);
+					glColor3f(0.0f, 0.0f, 0.0f);
+					glVertex2f(a.x, a.y);
+					glVertex2f(b.x, b.y);
+				}
+			}
+
 		}
 		glEnd();
 
