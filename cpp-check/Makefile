@@ -9,8 +9,8 @@ ifeq ($(UNAME),Darwin)
 endif
 
 ifeq ($(UNAME),Linux)
-	CPP=g++ -std=c++11 -Wall -Werror -g -I../../game-libs64/out/include
-	SDL_LIBS=-L../../game-libs64/out/include -lSDL2 -lGL
+	CPP=g++ -std=c++11 -Wall -Werror -g
+	SDL_LIBS=-lSDL2 -lGL
 endif
 
 all : check get-rect get-convex foldup show
