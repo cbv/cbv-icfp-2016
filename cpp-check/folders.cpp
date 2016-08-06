@@ -413,12 +413,13 @@ void State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 			}
 		}
 	}
-	if (from_noflip == 0) {
+	*this = result;
+
+  if (from_noflip == 0) {
 		std::cout << "WARNING: folded *everything*" << std::endl;
 	}
 	if (from_flip == 0) {
 		std::cout << "WARNING: folded *nothing*" << std::endl;
 	}
-
-	*this = result;
+  return (from_flip > 0);
 }
