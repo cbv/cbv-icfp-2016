@@ -2,4 +2,6 @@
 cpp-check/check
 cpp-check/get-rect
 cpp-check/objs
+cpp-check/foldup
 *.dSYM
+vis/vis
