@@ -142,43 +142,8 @@ int main(int argc, char **argv) {
 	}
 	std::cout << "------\n";
 
-	//print out solution -- need to de-duplicate verts for this.
-	std::unordered_map< std::string, uint32_t > source_inds;
-	std::vector< std::string > source_verts;
-	std::vector< std::string > destination_verts;
-	std::ostringstream facet_info;
-	for (auto const &facet : state) {
-		assert(facet.source.size() == facet.destination.size());
-		facet_info << facet.source.size();
-		for (uint32_t i = 0; i < facet.source.size(); ++i) {
-			std::string src_name = pp(facet.source[i].x()) + "," + pp(facet.source[i].y());
-			std::string dst_name = pp(facet.destination[i].x()) + "," + pp(facet.destination[i].y());
-			uint32_t idx = source_inds.insert(std::make_pair(src_name, source_inds.size())).first->second;
-			if (idx == source_verts.size()) {
-				source_verts.emplace_back(src_name);
-				destination_verts.emplace_back(dst_name);
-			}
-			assert(source_verts.size() == destination_verts.size());
-			assert(idx < source_verts.size());
-			assert(src_name == source_verts[idx]);
-			assert(idx < destination_verts.size());
-			assert(dst_name == destination_verts[idx]);
-
-			facet_info << " " << idx;
-		}
-		facet_info << "\n";
-	}
-
 	std::ostringstream out;
-	out << source_verts.size() << "\n";
-	for (auto v : source_verts) {
-		out << v << "\n";
-	}
-	out << state.size() << "\n";
-	out << facet_info.str();
-	for (auto v : destination_verts) {
-		out << v << "\n";
-	}
+        state.print_solution(out);
 
 	std::cout << out.str();
 
