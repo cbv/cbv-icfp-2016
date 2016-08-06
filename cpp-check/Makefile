@@ -13,10 +13,10 @@ ifeq ($(UNAME),Linux)
 	SDL_LIBS=-L../../game-libs64/out/include -lSDL2 -lGL
 endif
 
-all : check get-rect foldup show
+all : check get-rect get-convex foldup show
 
 clean :
-	rm -f check get-rect foldup show
+	rm -f check get-rect get-convex foldup show
 	rm -rf objs
 
 objs :
@@ -30,6 +30,9 @@ check : objs/check.o objs/structures.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
 get-rect : objs/get-rect.o objs/structures.o objs/rotations.o
+	$(CPP) $^ -o $@ -lgmp -lCGAL
+
+get-convex : objs/get-convex.o objs/structures.o objs/rotations.o objs/folders.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
 foldup : objs/foldup.o objs/structures.o objs/folders.o

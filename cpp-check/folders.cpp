@@ -270,7 +270,7 @@ bool State::refold(std::vector< K::Point_2 > const &marks) {
 	return true;
 }
 
-void State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
+bool State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 	assert(a != b);
 
 	K::Line_2 line(a,b);
