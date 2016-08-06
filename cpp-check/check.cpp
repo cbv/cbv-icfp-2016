@@ -64,6 +64,10 @@ int main(int argc, char **argv) {
 	std::cerr << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
 
 	std::unique_ptr< Solution > solution = Solution::read(argv[2]);
+	if (!solution) {
+		std::cerr << "Failed to read solution." << std::endl;
+		return 1;
+	}
 
 	std::cerr << "Read solution with " << solution->source.size() << " vertices and " << solution->facets.size() << " facets." << std::endl;
 
