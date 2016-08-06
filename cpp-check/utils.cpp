@@ -2,8 +2,13 @@
 #include "utils.hpp"
 
 #include <CGAL/Gmpq.h>
+#include <CGAL/Polygon_set_2.h>
 
-CGAL::Gmpq polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh) {
+K::Vector_2 rotate_left90 (const K::Vector_2 &vec) {
+	return vec.perpendicular(CGAL::COUNTERCLOCKWISE);
+}
+
+K::FT polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh) {
 	assert(!pwh.is_unbounded());
 	auto ret = pwh.outer_boundary().area();
 	assert(ret >= 0);
@@ -11,6 +16,17 @@ CGAL::Gmpq polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh) 
 		auto ha = hi->area();
 		assert(ha <= 0);
 		ret += ha;
+	}
+	assert(ret >= 0);
+	return ret;
+}
+
+K::FT polygon_set_area (CGAL::Polygon_set_2< K > const &ps) {
+	std::list< CGAL::Polygon_with_holes_2< K > > res;
+	ps.polygons_with_holes( std::back_inserter( res ) );
+	CGAL::Gmpq ret = 0;
+	for (auto const &poly : res) {
+		ret += polygon_with_holes_area(poly);
 	}
 	assert(ret >= 0);
 	return ret;

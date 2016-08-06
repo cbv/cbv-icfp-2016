@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 		CGAL::Polygon_2< K > b;
 
 		{ //build square from min/max:
-			K::Vector_2 y(-x.y(), x.x());
+			K::Vector_2 y = rotate_left90(x);
 			b.push_back(K::Point_2(0,0) + min.x() * x + min.y() * y);
 			b.push_back(K::Point_2(0,0) + max.x() * x + min.y() * y);
 			b.push_back(K::Point_2(0,0) + max.x() * x + max.y() * y);
