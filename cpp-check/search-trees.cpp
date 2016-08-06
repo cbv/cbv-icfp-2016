@@ -24,9 +24,6 @@ struct SearchFace {
 	std::vector< uint32_t > edges;
 	//CGAL::Gmpq area; //maybe?
 };
-std::vector< SearchEdge > edges;
-std::vector< SearchFace > faces;
-std::vector< CGAL::Gmpq > face_areas;
 
 //unroll in source domain:
 struct ActiveEdge {
@@ -47,7 +44,7 @@ struct UnrollState {
 	//create a key that uniquely identifies this unrolling step:
 	Key compute_key() const {
 		std::vector< std::string > names;
-		edges.reserve(active_edges.size());
+		names.reserve(active_edges.size());
 		for (auto const &e : active_edges) {
 			std::ostringstream name;
 			if (e.a.x() < e.b.x() || (e.a.x() == e.b.x() && e.a.y() <= e.b.y())) {
@@ -126,6 +123,11 @@ void show(std::vector< std::tuple< glm::vec2, glm::vec2, glm::u8vec4 > > const &
 	viz.stop_flag = false;
 	viz.run();
 }
+
+
+std::vector< SearchEdge > edges;
+std::vector< SearchFace > faces;
+std::vector< CGAL::Gmpq > face_areas;
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
@@ -331,8 +333,8 @@ int main(int argc, char **argv) {
 		Key root_key = root.compute_key();
 		states.insert(std::make_pair(root_key, root));
 	}
-
-
+	auto const &root_key = states.begin()->first;
+	auto const &root = states.begin()->second;
 
 	struct {
 		uint32_t expanded = 0;
@@ -343,6 +345,7 @@ int main(int argc, char **argv) {
 		uint32_t no_other_area = 0;
 		uint32_t out_of_box = 0;
 		uint32_t intersection = 0;
+		uint32_t dead_ends = 0;
 		void dump() {
 			std::cerr << "Have expanded " << expanded << " states, tried to add " << tried << " and added " << added << ":\n"
 					<< "  " << repeat << " were already added\n"
@@ -350,23 +353,26 @@ int main(int argc, char **argv) {
 					<< "  " << no_other_area << " didn't have area for unused faces\n"
 					<< "  " << out_of_box << " were out of box\n"
 					<< "  " << intersection << " intersected active edges\n"
+					<< "  " << dead_ends << " discarded dead ends\n"
 				;
 				std::cerr.flush();
 		}
 	} stats;
 
-	//TODO: consider a priority queue
-	std::deque< Key > to_expand;
 
 	//helper to manage expanding states:
-	auto try_adding_face = [&stats, &states, &to_expand](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3]) -> bool {
+	auto try_adding_face = [&stats, states](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states) -> bool {
 		assert(face_idx < faces.size());
 		assert(faces.size() == face_areas.size());
 
 		++stats.tried;
 
 		std::vector< std::tuple< glm::vec2, glm::vec2, glm::u8vec4 > > show_lines;
-		{
+		static uint32_t count = 0;
+		count += 1;
+		if (count == 500) {
+			count = 0;
+
 			show_lines.emplace_back(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
 			show_lines.emplace_back(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
 			show_lines.emplace_back(glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
@@ -402,14 +408,7 @@ int main(int argc, char **argv) {
 				show_lines.emplace_back(to_glm(xa), to_glm(xb), glm::u8vec4(0xff, 0xff, 0xff, 0x88));
 				show_lines.emplace_back(0.5f * (to_glm(xa) + to_glm(xb)), 0.5f * (to_glm(xa) + to_glm(xb)) + 0.02f * glm::normalize(to_glm(CGAL::ORIGIN + xout)), glm::u8vec4(0xff, 0xff, 0xff, 0x88));
 			}
-			{
-				static uint32_t count = 0;
-				count += 1;
-				if (count == 100) {
-					show(show_lines, false);
-					count = 0;
-				}
-			}
+			show(show_lines, false);
 		}
 
 		UnrollState ns = us;
@@ -569,47 +568,19 @@ int main(int argc, char **argv) {
 		}
 
 		Key ns_key = ns.compute_key();
-		if (states.insert(std::make_pair(ns_key, ns)).second) {
-			to_expand.push_back(ns_key);
-			++stats.added;
-
-			/*//some DEBUG:
-			show_lines.clear();
-			show_lines.emplace_back(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
-			show_lines.emplace_back(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
-			show_lines.emplace_back(glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
-			show_lines.emplace_back(glm::vec2(0.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
-			for (auto const &ae : ns.active_edges) {
-				glm::vec2 a = to_glm(ae.a);
-				glm::vec2 b = to_glm(ae.b);
-				show_lines.emplace_back(a, b, glm::u8vec4(0x00, 0x00, 0x00, 0xff));
-				glm::vec2 along = glm::normalize(b - a);
-				glm::vec2 out;
-				glm::u8vec4 color;
-				if (ae.perp_is_out) {
-					out = glm::vec2(-along.y, along.x);
-					color = glm::u8vec4(0x00, 0x00, 0xff, 0xff);
-				} else {
-					out =-glm::vec2(-along.y, along.x);
-					color = glm::u8vec4(0x00, 0xff, 0x00, 0xff);
-				}
-				show_lines.emplace_back(0.5f * (a+b), 0.5f * (a+b) + 0.02f * out, color);
+		if (!states.count(ns_key)) {
+			if (new_states->insert(std::make_pair(ns_key, ns)).second) {
+				++stats.added;
+				return true;
 			}
-			show(show_lines);*/
-
-			return true;
-		} else {
-			//already got to state from elsewhere
-			++stats.repeat;
-			return false;
 		}
+		++stats.repeat;
+		return false;
 	};
 
 
 
 	{ //seed with all possible bottom-left edges:
-		auto const &root_key = states.begin()->first;
-		auto const &root = states.begin()->second;
 
 		struct {
 			uint32_t made = 0;
@@ -714,7 +685,7 @@ int main(int argc, char **argv) {
 					assert(CGAL::ORIGIN + xf[0] * dir.x() + xf[1] * dir.y() == K::Point_2(1,0));
 					assert(CGAL::ORIGIN + xf[0] * perp.x() + xf[1] * perp.y() == K::Point_2(0,1));
 
-					bool res = try_adding_face(root_key, root, f, xf);
+					bool res = try_adding_face(root_key, root, f, xf, &states);
 					assert(res == true);
 					++seed_stats.made;
 				}
@@ -733,7 +704,7 @@ int main(int argc, char **argv) {
 					xf[1] = to_dir * dir.y() + to_perp * perp.y();
 					xf[2] = to_b - (xf[0] * b.x() + xf[1] * b.y());
 
-					bool res = try_adding_face(root_key, root, f, xf);
+					bool res = try_adding_face(root_key, root, f, xf, &states);
 					assert(res == true);
 					++seed_stats.made_flipped;
 				}
@@ -747,6 +718,13 @@ int main(int argc, char **argv) {
 		seed_stats.dump();
 	}
 
+	//TODO: consider a priority queue
+	std::vector< Key > to_expand;
+	for (auto const &kv : states) {
+		if (kv.first == root_key) continue; //don't expand root explicitly
+		to_expand.emplace_back(kv.first);
+	}
+
 
 	while (!to_expand.empty()) {
 		{
@@ -757,12 +735,14 @@ int main(int argc, char **argv) {
 				count = 0;
 			}
 		}
-		Key key = to_expand.front();
-		to_expand.pop_front();
+		Key key = to_expand.back();
+		to_expand.pop_back();
 		++stats.expanded;
 
 		assert(states.count(key));
 		UnrollState const &us = states.find(key)->second;
+
+		std::unordered_map< Key, UnrollState > fresh_states;
 
 		//try expanding along all edges:
 		for (auto const &ae : us.active_edges) {
@@ -776,6 +756,8 @@ int main(int argc, char **argv) {
 			CGAL::Gmpq len2 = to_dir * to_dir;
 			assert(len2 > 0);
 			assert(len2 == to_out * to_out);
+
+			bool expanded = false;
 
 			if (edge.a != -1U) {
 				//can place face 'a'?
@@ -798,31 +780,45 @@ int main(int argc, char **argv) {
 				assert(CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2] == ae.b);
 				assert(CGAL::ORIGIN + xf[0] * (b + out).x() + xf[1] * (b + out).y() + xf[2] == ae.b + to_out);
 
-				try_adding_face(key, us, edge.a, xf);
+				if (try_adding_face(key, us, edge.a, xf, &fresh_states)) {
+					expanded = true;
+				}
 			}
-			/*
 			if (edge.b != -1U) {
 				//can place face 'b'?
 				assert(edge.b < faces.size());
 				auto const &face = faces[edge.b];
 				assert(edge.be < face.boundary.size());
-				K::Point_2 const &b = face.boundary[edge.be];
 				K::Point_2 const &a = face.boundary[(edge.be+1)%face.boundary.size()];
+				K::Point_2 const &b = face.boundary[edge.be];
 				K::Vector_2 dir = b-a;
-				K::Vector_2 perp = dir.perpendicular(CGAL::COUNTERCLOCKWISE);
+				K::Vector_2 out = dir.perpendicular(CGAL::CLOCKWISE); //always move inside of 'b' to out direction
 
 				K::Vector_2 xf[3];
-				xf[0] = (to_dir * dir.x() + to_perp * perp.x()) / len2;
-				xf[1] = (to_dir * dir.y() + to_perp * perp.y()) / len2;
+				xf[0] = (to_dir * dir.x() + to_out * out.x()) / len2;
+				xf[1] = (to_dir * dir.y() + to_out * out.y()) / len2;
 				assert(xf[0] * xf[0] == 1);
 				assert(xf[1] * xf[1] == 1);
 				xf[2] = (ae.a - CGAL::ORIGIN) - (xf[0] * a.x() + xf[1] * a.y());
 
 				assert(CGAL::ORIGIN + xf[0] * a.x() + xf[1] * a.y() + xf[2] == ae.a);
 				assert(CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2] == ae.b);
+				assert(CGAL::ORIGIN + xf[0] * (b + out).x() + xf[1] * (b + out).y() + xf[2] == ae.b + to_out);
 
-				try_adding_face(edge.b, xf);
-			}*/
+				if (try_adding_face(key, us, edge.b, xf, &fresh_states)) {
+					expanded = true;
+				}
+			}
+
+			if (!expanded) {
+				++stats.dead_ends;
+				fresh_states.clear();
+				break;
+			}
+		}
+		for (auto const &kv : fresh_states) {
+			states.insert(kv);
+			to_expand.push_back(kv.first);
 		}
 	}
 
