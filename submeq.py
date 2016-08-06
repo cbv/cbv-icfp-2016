@@ -3,6 +3,7 @@
 import sys
 import subprocess
 import os
+import time
 
 problem_number = int(sys.argv[1])
 outproblemname = "problem{0:06d}".format(problem_number)
@@ -38,3 +39,4 @@ for f in os.listdir("problems/"):
         print "Submitting", f
         subprocess.call(["./reptiloid.py", f.lstrip("prob"),
                          str(subfile)])
+    time.sleep(1)
