@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
 		return state;
 	};
 
+	uint32_t best_count = 999999;
 	CGAL::Gmpq best_score = 0;
 	std::string best_solution;
 	// TODO do the exact/approximate phases
@@ -146,23 +147,47 @@ int main(int argc, char **argv) {
 			max_y = c + CGAL::Gmpq(1,2);
 		}
 		auto score = get_score(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
-		if (score > best_score) {
-			auto state = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
-			std::ostringstream out;
-			state.print_solution(out);
-			std::string solution = out.str();
-			if (count_non_whitespace(solution) > solution_size_limit) {
+		if (score >= best_score && score > 0) {
+			if (score > best_score) {
+				best_score = score;
+				best_count = 999999;
+			}
+
+			auto state = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y)).normalized();
+			std::string solution;
+			{
+				std::ostringstream out;
+				state.print_solution(out);
+				solution = out.str();
+			}
+			uint32_t count = count_non_whitespace(solution);
+			/*
+			// > solution_size_limit) {
 #ifndef NDEBUG
 				std::cerr << "Found a good but long solution of length " << count_non_whitespace(solution) << "." << std::endl;
 #endif
 				continue;
-			}
-			std::cerr << "Best score so far: " << score;
-			std::cerr << " ~= " << std::fixed << std::setprecision(7) << score.to_double() << std::endl;
+			}*/
+			if (count < best_count) {
+				std::cerr << "Best score so far: " << score;
+				std::cerr << " ~= " << std::fixed << std::setprecision(7) << score.to_double() << std::endl;
+				std::cerr << " (in " << count << " non-whitespace characters)" << std::endl;
 
-			best_score = score;
-			best_solution = solution;
-			if (score == 1) break;
+				if (score == 1) {
+					if (argc == 3) {
+						std::cerr << "  (Writing to " << argv[2] << ")" << std::endl;
+						std::ofstream file(argv[2]);
+						file << best_solution;
+					} else {
+						std::cout << best_solution;
+					}
+				}
+
+
+				best_count = count;
+				best_solution = solution;
+				if (score == 1 && count < solution_size_limit) break;
+			}
 		}
 	}
 
