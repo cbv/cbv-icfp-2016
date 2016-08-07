@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
 				std::cerr << " (in " << count << " non-whitespace characters)" << std::endl;
 
 				if (score == 1 || count <= solution_size_limit) {
-					output (best_solution);
+					output (solution);
 				}
 
 				best_count = count;

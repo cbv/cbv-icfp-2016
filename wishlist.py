@@ -22,8 +22,8 @@ def get_blob(hash):
 def get_problems():
     response = requests.get('http://2016sv.icfpcontest.org/api/snapshot/list', headers = headers)
     if response.status_code != 200:
-        print "error response"
-        print response
+        print("error response")
+        print(response)
         exit(1)
     snapshot_hash = sorted(response.json()['snapshots'], key=lambda s: -s['snapshot_time'])[0]['snapshot_hash']
     time.sleep(1)
@@ -133,7 +133,7 @@ for prob in problems:
         elif exists(pid):
             c = which_class(pid)
             for o_pid in classes[c] + [c]:
-                if not is_solved(o_prob['problem_id']):
+                if not is_solved(o_pid):
                     o_prob = get_prob(o_pid)
                     prob['equiv_score'] += o_prob['delta_score']
             if prob['equiv_score'] > 0:
@@ -144,7 +144,7 @@ for prob in problems:
         if exists(pid):
             c = which_class(pid)
             for o_pid in classes[c] + [c]:
-                if is_solved(o_prob['problem_id']):
+                if is_solved(o_pid):
                     dup_solved = True
                     break
                 o_prob = get_prob(o_pid)
