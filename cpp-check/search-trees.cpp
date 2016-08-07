@@ -51,11 +51,12 @@ struct UnrollState {
 		names.reserve(active_edges.size());
 		for (auto const &e : active_edges) {
 			std::ostringstream name;
-			if (e.a.x() < e.b.x() || (e.a.x() == e.b.x() && e.a.y() <= e.b.y())) {
-				name << e.perp_is_out << "|" << e.edge << "|" << e.a.x() << "|" << e.a.y() << "|" << e.b.x() << "|" << e.b.y();
-			} else {
-				name << e.perp_is_out << "|" << e.edge << "|" << e.b.x() << "|" << e.b.y() << "|" << e.a.x() << "|" << e.a.y();
-			}
+			//I think this was being slightly too good about disambiguating things
+			//if (e.a.x() < e.b.x() || (e.a.x() == e.b.x() && e.a.y() <= e.b.y())) {
+			name << e.perp_is_out << "|" << e.edge << "|" << e.a.x() << "|" << e.a.y() << "|" << e.b.x() << "|" << e.b.y();
+			//} else {
+			//	name << e.perp_is_out << "|" << e.edge << "|" << e.b.x() << "|" << e.b.y() << "|" << e.a.x() << "|" << e.a.y();
+			//}
 			names.emplace_back(name.str());
 		}
 		std::sort(names.begin(), names.end());
@@ -406,19 +407,28 @@ int main(int argc, char **argv) {
 	};
 
 	//helper to manage expanding states:
-	auto try_adding_face = [&stats, &states, &report](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states) -> bool {
+	auto try_adding_face = [&stats, &states, &report](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states, bool *feasible) -> bool {
 //#define DEBUG_ADD 1
+#define DEBUG_SHOW 1
+
+		if (feasible) *feasible = false;
+
 		assert(face_idx < faces.size());
 		assert(faces.size() == face_areas.size());
 
 		++stats.tried;
 
-		#ifdef DEBUG_ADD
+		#if defined(DEBUG_ADD) || defined(DEBUG_SHOW)
 		std::vector< std::tuple< glm::vec2, glm::vec2, glm::u8vec4 > > show_lines;
+		#if defined(DEBUG_ADD)
+		{
+		#elif defined(DEBUG_SHOW)
 		static uint32_t count = 0;
 		count += 1;
-		if (count > 0) {
+		if (count >= 100)
+		{
 			count = 0;
+		#endif
 
 			show_lines.emplace_back(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
 			show_lines.emplace_back(glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
@@ -595,13 +605,13 @@ int main(int argc, char **argv) {
 								//intersects at a non-endpoint point
 								++stats.intersection;
 
-								#ifdef DEBUG_ADD
+								/*#ifdef DEBUG_ADD
 								auto temp_lines = show_lines;
 								temp_lines.emplace_back(to_glm(*p) + glm::vec2( 0.1f, 0.1f), to_glm(*p) + glm::vec2(-0.1f,-0.1f), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 								temp_lines.emplace_back(to_glm(*p) + glm::vec2( 0.1f,-0.1f), to_glm(*p) + glm::vec2(-0.1f, 0.1f), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 								show(temp_lines);
 								std::cerr << " -- isect point" << std::endl;
-								#endif //DEBUG_ADD
+								#endif //DEBUG_ADD*/
 
 								return false;
 							}
@@ -609,13 +619,13 @@ int main(int argc, char **argv) {
 							//intersects in a segment
 							++stats.intersection;
 
-							#ifdef DEBUG_ADD
+							/*#ifdef DEBUG_ADD
 							auto temp_lines = show_lines;
 							temp_lines.emplace_back(to_glm(ae.a), to_glm(ae.b), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 							temp_lines.emplace_back(to_glm(ne.a), to_glm(ne.b), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 							show(temp_lines);
 							std::cerr << " -- isect line" << std::endl;
-							#endif //DEBUG_ADD
+							#endif //DEBUG_ADD*/
 
 							return false;
 						}
@@ -632,7 +642,7 @@ int main(int argc, char **argv) {
 			}
 		}
 
-
+		if (feasible) *feasible = true;
 	
 		Key ns_key = ns.compute_key();
 		//std::cout << ns_key << " from " << ns.source_key << std::endl; //DEBUG
@@ -640,10 +650,21 @@ int main(int argc, char **argv) {
 			if (new_states->insert(std::make_pair(ns_key, ns)).second) {
 				++stats.added;
 
+				#ifdef DEBUG_ADD
+				show(show_lines);
+				#endif
+
+
 				//std::cout << "adding with: "<< ns.remaining_area << std::endl; //DEBUG
 
 				if (ns.remaining_area == 0) {
 					assert(ns.unused_faces.empty()); //otherwise would have bailed already
+
+					#ifdef DEBUG_ADD
+					std::cerr << " !! solution" << std::endl;
+					show(show_lines);
+					#endif //DEBUG_ADD
+
 					report(ns);
 				}
 
@@ -769,8 +790,9 @@ int main(int argc, char **argv) {
 					assert(CGAL::ORIGIN + xf[0] * dir.x() + xf[1] * dir.y() == K::Point_2(1,0));
 					assert(CGAL::ORIGIN + xf[0] * perp.x() + xf[1] * perp.y() == K::Point_2(0,1));
 
-					bool res = try_adding_face(root_key, root, f, xf, &states);
-					assert(res == true);
+					bool feasible = false;
+					try_adding_face(root_key, root, f, xf, &states, &feasible);
+					assert(feasible);
 					++seed_stats.made;
 				}
 				if (max_x == dir * (b - CGAL::ORIGIN)) {
@@ -788,8 +810,9 @@ int main(int argc, char **argv) {
 					xf[1] = to_dir * dir.y() + to_perp * perp.y();
 					xf[2] = to_b - (xf[0] * b.x() + xf[1] * b.y());
 
-					bool res = try_adding_face(root_key, root, f, xf, &states);
-					assert(res == true);
+					bool feasible = false;
+					try_adding_face(root_key, root, f, xf, &states, &feasible);
+					assert(feasible);
 					++seed_stats.made_flipped;
 				}
 
@@ -803,10 +826,14 @@ int main(int argc, char **argv) {
 	}
 
 	//TODO: consider a priority queue
-	std::vector< Key > to_expand;
+	std::multimap< double, Key > to_expand;
+
+	auto distance = [](UnrollState const &us) -> double {
+		return CGAL::to_double(us.remaining_area);
+	};
 	for (auto const &kv : states) {
 		assert(kv.first != root_key); //root shouldn't be in states
-		to_expand.emplace_back(kv.first);
+		to_expand.insert(std::make_pair(distance(kv.second), kv.first));
 	}
 
 
@@ -819,8 +846,8 @@ int main(int argc, char **argv) {
 				count = 0;
 			}
 		}
-		Key key = to_expand.back();
-		to_expand.pop_back();
+		Key key = to_expand.begin()->second;
+		to_expand.erase(to_expand.begin());
 		++stats.expanded;
 
 		assert(states.count(key));
@@ -864,7 +891,9 @@ int main(int argc, char **argv) {
 				assert(CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2] == ae.b);
 				assert(CGAL::ORIGIN + xf[0] * (b + out).x() + xf[1] * (b + out).y() + xf[2] == ae.b + to_out);
 
-				if (try_adding_face(key, us, edge.a, xf, &fresh_states)) {
+				bool feasible = false;
+				try_adding_face(key, us, edge.a, xf, &fresh_states, &feasible);
+				if (feasible) {
 					expanded = true;
 				}
 			}
@@ -889,7 +918,9 @@ int main(int argc, char **argv) {
 				assert(CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2] == ae.b);
 				assert(CGAL::ORIGIN + xf[0] * (b + out).x() + xf[1] * (b + out).y() + xf[2] == ae.b + to_out);
 
-				if (try_adding_face(key, us, edge.b, xf, &fresh_states)) {
+				bool feasible = false;
+				try_adding_face(key, us, edge.b, xf, &fresh_states, &feasible);
+				if (feasible) {
 					expanded = true;
 				}
 			}
@@ -902,11 +933,12 @@ int main(int argc, char **argv) {
 		}
 		for (auto const &kv : fresh_states) {
 			states.insert(kv);
-			to_expand.push_back(kv.first);
+			to_expand.insert(std::make_pair(distance(kv.second), kv.first));
 		}
 	}
 
 	stats.dump();
 
-	return 0;
+	std::cerr << "ERROR: shouldn't have finished without solving." << std::endl;
+	return 1; //this *should* be complete, so it's weird.
 }
