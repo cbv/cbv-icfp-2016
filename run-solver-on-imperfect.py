@@ -112,6 +112,28 @@ if __name__ == "__main__":
 
 	pending = []
 
+	def submit(soln_file):
+		print("Submitting " + soln_file)
+		subprocess.call(['./reptiloid.py', str(number), soln_file])
+		if args.normalize != '':
+			time.sleep(1) #rate limit
+			print("Normalizing and re-submitting " + soln_file)
+			norm_file = soln_file + '-norm'
+			subprocess.call([args.normalize, soln_file, norm_file])
+			subprocess.call(['./reptiloid.py', str(number), norm_file])
+			time.sleep(1) #rate limit
+			if args.cleanup:
+				try:
+					os.unlink(norm_file)
+				except:
+					pass
+		if args.cleanup:
+			try:
+				os.unlink(soln_file)
+			except:
+				pass
+
+
 	def killall(signum, frame):
 		global pending
 		print("--- killing all solvers ---")
@@ -142,6 +164,8 @@ if __name__ == "__main__":
 					print("Killing " + " ".join(proc.args))
 					proc.kill()
 					proc.send_signal(9)
+					if os.path.exists(soln_file):
+						submit(soln_file)
 				else:
 					still_pending.append( (number, soln_file, proc, elapsed) )
 			else:
@@ -153,26 +177,7 @@ if __name__ == "__main__":
 					if os.path.exists(soln_file):
 						print("  (will try to submit anyway)")
 				if os.path.exists(soln_file):
-					print("Submitting " + soln_file)
-					subprocess.call(['./reptiloid.py', str(number), soln_file])
-					if args.normalize != '':
-						time.sleep(1) #rate limit
-						print("Normalizing and re-submitting " + soln_file)
-						norm_file = soln_file + '-norm'
-						subprocess.call([args.normalize, soln_file, norm_file])
-						subprocess.call(['./reptiloid.py', str(number), norm_file])
-						time.sleep(1) #rate limit
-						if args.cleanup:
-							try:
-								os.unlink(norm_file)
-							except:
-								pass
-
-					if args.cleanup:
-						try:
-							os.unlink(soln_file)
-						except:
-							pass
+					submit(soln_file)
 				else:
 					print("NO SOLUTION (" + soln_file + ")")
 		pending = still_pending
@@ -181,6 +186,10 @@ if __name__ == "__main__":
 			if is_done(number): continue #check again just in case
 
 			soln_file = "TMP-soln-{}.txt".format(number)
+			try:
+				os.unlink(soln_file)
+			except:
+				pass
 			cmd = [args.solver, 'problems/prob{}'.format(number), soln_file]
 			print("Launching '" + " ".join(cmd) + "'")
 			proc = subprocess.Popen([args.solver, 'problems/prob{}'.format(number), soln_file])
