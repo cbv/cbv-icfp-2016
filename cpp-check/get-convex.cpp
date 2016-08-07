@@ -58,14 +58,11 @@ int main(int argc, char **argv) {
 	assert(hull.orientation() == CGAL::COUNTERCLOCKWISE);
 
 	// get directions
-	std::list< K::Vector_2 > x_dirs;
-	{
-		std::vector< K::Vector_2 > x_dirs_tmp = unit_vectors();
-		x_dirs = std::list<K::Vector_2>(x_dirs_tmp.begin(), x_dirs_tmp.end());
-	}
+	std::vector< K::Vector_2 > x_dirs = unit_vectors();
 
+	// get directions from the convex hull
 	std::cerr << "Adding edges in the convex hull..." << std::endl;
-	{ //add directions that can be made rational:
+	{
 		uint_fast32_t exact = 0;
 		uint_fast32_t inexact = 0;
 		for (auto ei = hull.edges_begin(); ei != hull.edges_end(); ++ei) {
@@ -81,6 +78,11 @@ int main(int argc, char **argv) {
 		}
 		std::cerr << "Addded " << exact << " exact directions and " << inexact << " inexact directions." << std::endl;
 	}
+
+	// sort the directions
+	std::sort(x_dirs.begin(), x_dirs.end(), [](K::Vector_2 const &a, K::Vector_2 const &b){
+		return vector_bit_complexity(a) < vector_bit_complexity(b);
+	});
 
 	auto get_score = [&hull,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
 		CGAL::Polygon_2< K > square;
@@ -112,9 +114,13 @@ int main(int argc, char **argv) {
 		uint_fast32_t counter = 0;
 		while (fold_excess(state, hull)) {
 			++counter;
+#ifndef NDEBUG
 			std::cerr << "Folded " << counter << " times." << std::endl;
+#endif
 		}
+#ifndef NDEBUG
 		std::cerr << "Folded " << counter << " times in total." << std::endl;
+#endif
 		return state;
 	};
 
@@ -166,9 +172,14 @@ int main(int argc, char **argv) {
 			state.print_solution(out);
 			std::string solution = out.str();
 			if (count_non_whitespace(solution) > solution_size_limit) {
+#ifndef NDEBUG
 				std::cerr << "Found a good but long solution of length " << count_non_whitespace(solution) << "." << std::endl;
+#endif
 				continue;
 			}
+			std::cerr << "Best score so far: " << score << " ~= " << score.to_double() << std::endl;
+
+			best_score = score;
 			best_solution = solution;
 			if (score == 1) break;
 		}
