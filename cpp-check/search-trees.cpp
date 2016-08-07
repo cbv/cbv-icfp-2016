@@ -53,6 +53,10 @@ struct UnrollState {
 			std::ostringstream name;
 			//this was being slightly too good about disambiguating things when it sorted the endpoints.
 			name << e.perp_is_out << "|" << e.edge << "|" << e.a.x() << "|" << e.a.y() << "|" << e.b.x() << "|" << e.b.y();
+			//this is actually important!
+			for (auto i : unused_faces) {
+				name << "|" << i;
+			}
 			names.emplace_back(name.str());
 		}
 		std::sort(names.begin(), names.end());
