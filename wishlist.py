@@ -103,8 +103,14 @@ to_submeq = []
 
 def is_solved(pid):
     outproblemname = "problem{0:06d}".format(pid)
-    subfile = os.path.join("reptiloid-db", outproblemname, "best_submitted")
-    return os.access(subfile, os.F_OK)
+    try:
+        subfile = os.path.join("reptiloid-db", outproblemname, "best_submitted")
+        best = os.readlink(subfile)
+        if best.startswith('solution_1.0000000'):
+            return True
+    except:
+        pass
+    return False
 
 def get_prob(pid):
     for prob in problems:
