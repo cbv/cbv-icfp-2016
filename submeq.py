@@ -37,6 +37,7 @@ for f in os.listdir("problems/"):
         continue
     if len(out) == 0:
         print "Submitting", f
-        subprocess.call(["./reptiloid.py", f.lstrip("prob"),
-                         str(subfile)])
-    time.sleep(1)
+        submitted = subprocess.call(["./reptiloid.py", f.lstrip("prob"),
+                                     str(subfile)])
+        if submitted == 0:
+            time.sleep(1)
