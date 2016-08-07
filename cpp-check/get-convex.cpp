@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 				x_dirs.emplace(x_dirs.begin(), pair.second);
 			} else {
 				++inexact;
-				std::cerr << "Approximate " << *ei << " by " << pair.second << "." << std::endl;
+				std::cerr << "Approximate " << ei->to_vector() << " by " << pair.second << "." << std::endl;
 				x_dirs.emplace_back(pair.second);
 			}
 		}

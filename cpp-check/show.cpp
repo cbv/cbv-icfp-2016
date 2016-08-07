@@ -1,6 +1,83 @@
 #include "Viz1.hpp"
 #include "structures.hpp"
 
+#include <CGAL/Partition_traits_2.h>
+#include <CGAL/Triangle_2.h>
+#include <CGAL/partition_2.h>
+
+
+inline
+glm::vec2 to_pt (K::Point_2 const &pt) {
+	return glm::vec2 (CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
+}
+
+inline
+void mark_pt (K::Point_2 const &pt) {
+	glVertex2f (CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
+}
+
+
+inline
+void draw_segment_2pt (K::Point_2 const &pt1, K::Point_2 const &pt2, float r, float g, float b, float a=1.0f) {
+	glBegin(GL_LINES);
+	glColor4f(r, g, b, a);
+	mark_pt(pt1);
+	mark_pt(pt2);
+        glEnd();
+}
+
+inline
+void draw_segment (K::Segment_2 const& seg, float r, float g, float b, float a=1.0f) {
+	draw_segment_2pt (seg[0], seg[1], r, g, b, a);
+}
+
+inline
+void draw_poly_edges (CGAL::Polygon_2<K> const& poly, float r, float g, float b, float a=1.0f) {
+	for (auto ei = poly.edges_begin(); ei != poly.edges_end(); ++ei) {
+		draw_segment (*ei, r, g, b, a);
+	}
+}
+
+inline
+void draw_triangle_inner (K::Triangle_2 const& tri, float r, float g, float b, float a=1.0f) {
+	glBegin(GL_TRIANGLES);
+        glColor4f(r, g, b, a);
+	mark_pt(tri[0]);
+	mark_pt(tri[1]);
+	mark_pt(tri[2]);
+        glEnd();
+}
+
+typedef CGAL::Partition_traits_2< K > P;
+inline
+void draw_convex_poly_inner (P::Polygon_2 const& poly, float r, float g, float b, float a=1.0f) {
+	assert (poly.is_counterclockwise_oriented());
+	assert (poly.is_simple());
+	assert (poly.is_convex());
+	glBegin(GL_TRIANGLE_FAN);
+    glColor4f(r, g, b, a);
+	for (auto p = poly.vertices_begin(); p != poly.vertices_end(); ++p) {
+		glVertex2f(CGAL::to_double(p->x()), CGAL::to_double(p->y()));
+	}
+	glEnd();
+}
+
+inline
+void draw_poly_inner (CGAL::Polygon_2<K> poly, float r, float g, float b, float a=1.0f) {
+	if (!poly.is_counterclockwise_oriented()) {
+		poly.reverse_orientation();
+	}
+	assert (poly.is_simple());
+	std::vector< P::Polygon_2 > convex_partition;
+	CGAL::optimal_convex_partition_2(poly.vertices_begin(),
+		poly.vertices_end(),
+		std::back_inserter(convex_partition));
+	
+	for (auto const &poly : convex_partition) {
+		draw_convex_poly_inner(poly, r, g, b, a);
+	}
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		std::cerr << "Usage:\n./show <solution|problem>\n (Will try to parse as solution and problem.)" << std::endl;
@@ -37,10 +114,6 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 */
-
-	auto to_pt = [](K::Point_2 const &pt) -> glm::vec2 {
-		return glm::vec2(CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
-	};
 
 	Viz1 viz(glm::uvec2(800, 400));
 	glEnable(GL_LINE_SMOOTH);
@@ -102,67 +175,51 @@ int main(int argc, char **argv) {
 		glScalef(2.0f / (viz.aspect * diameter), 2.0f / diameter, 1.0f);
 		glTranslatef(0.25f * viz.aspect * diameter - 0.5f * (src_max.x + src_min.x), - 0.5f * (src_max.y + src_min.y), 0.0f);
 
-		glBegin(GL_LINES);
 		if (solution)
 		for (auto const &f : solution->facets) {
-			for (uint32_t i = 0; i < f.size(); ++i) {
-				glm::vec2 a = to_pt(solution->source[f[i]]);
-				glm::vec2 b = to_pt(solution->source[f[(i+1)%f.size()]]);
-				glColor3f(0.0f, 0.0f, 0.0f);
-				glVertex2f(a.x, a.y);
-				glVertex2f(b.x, b.y);
+			CGAL::Polygon_2<K> poly;
+			for (auto const &i : f) {
+				poly.push_back(solution->source[i]);
 			}
+			draw_poly_edges (poly, 0., 0., 0.);
+			draw_poly_inner (poly, 0., 0., 0., 0.3);
 		}
 		if (problem) {
-			for (auto const &poly : problem->silhouette) {
-				for (uint32_t i = 0; i < poly.size(); ++i) {
-					glm::vec2 a = to_pt(poly[i]);
-					glm::vec2 b = to_pt(poly[(i+1)%poly.size()]);
-					glColor3f(0.0f, 0.0f, 0.0f);
-					glVertex2f(a.x, a.y);
-					glVertex2f(b.x, b.y);
-				}
+			for (auto const &pts : problem->silhouette) {
+				CGAL::Polygon_2<K> poly(pts.begin(), pts.end());
+				draw_poly_edges (poly, 0., 0., 0.);
+				if (poly.is_counterclockwise_oriented())
+					draw_poly_inner (poly, 0., 0., 0., 0.3);
 			}
 		}
-		glEnd();
 
 		glLoadIdentity();
 		glScalef(2.0f / (viz.aspect * diameter), 2.0f / diameter, 1.0f);
 		glTranslatef(-0.25f * viz.aspect * diameter - 0.5f * (dst_max.x + dst_min.x), - 0.5f * (dst_max.y + dst_min.y), 0.0f);
 
-		glBegin(GL_LINES);
 		if (solution)
 		for (auto const &f : solution->facets) {
-			for (uint32_t i = 0; i < f.size(); ++i) {
-				glm::vec2 a = to_pt(solution->destination[f[i]]);
-				glm::vec2 b = to_pt(solution->destination[f[(i+1)%f.size()]]);
-				glColor3f(0.0f, 0.0f, 0.0f);
-				glVertex2f(a.x, a.y);
-				glVertex2f(b.x, b.y);
+			CGAL::Polygon_2<K> poly;
+			for (auto const &i : f) {
+				poly.push_back(solution->destination[i]);
 			}
+			draw_poly_edges (poly, 0., 0., 0.);
+			draw_poly_inner (poly, 0., 0., 0., 0.3);
 		}
 
 		if (problem) {
 			for (auto const &line : problem->skeleton) {
-				glm::vec2 a = to_pt(line.first);
-				glm::vec2 b = to_pt(line.second);
-				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-				glVertex2f(a.x, a.y);
-				glVertex2f(b.x, b.y);
+				draw_segment_2pt(line.first, line.second, 1.0f, 1.0f, 1.0f, 0.5f);
 			}
 
-			for (auto const &poly : problem->silhouette) {
-				for (uint32_t i = 0; i < poly.size(); ++i) {
-					glm::vec2 a = to_pt(poly[i]);
-					glm::vec2 b = to_pt(poly[(i+1)%poly.size()]);
-					glColor3f(0.0f, 0.0f, 0.0f);
-					glVertex2f(a.x, a.y);
-					glVertex2f(b.x, b.y);
-				}
+			for (auto const &pts : problem->silhouette) {
+				CGAL::Polygon_2<K> poly(pts.begin(), pts.end());
+				draw_poly_edges (poly, 0., 0., 0.);
+				if (poly.is_counterclockwise_oriented())
+					draw_poly_inner (poly, 0., 0., 0., 0.1);
 			}
 
 		}
-		glEnd();
 
 	};
 	viz.run();
