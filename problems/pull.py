@@ -18,7 +18,14 @@ def get_problems():
     snapshot_hash = sorted(response.json()['snapshots'], key=lambda s: -s['snapshot_time'])[0]['snapshot_hash']
     time.sleep(1)
     s = get_blob(snapshot_hash)
-    return s.json()['problems']
+    response_json = s.json()
+    if not response_json["ok"]:
+        print "error from server"
+        print s
+        print response_json
+        exit(1)
+    else:
+        return s.json()['problems']
 
 for prob in get_problems():
     pid = prob['problem_id']
