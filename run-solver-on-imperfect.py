@@ -28,6 +28,7 @@ if __name__ == "__main__":
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
 	parser.add_argument("--random", help="should the problems be shuffled?", type=bool, default=False)
+	parser.add_argument("--reverse", help="should the problems be done in reverse order (largest number first)?", type=bool, default=False)
 
 	args = parser.parse_args()
 
@@ -52,6 +53,8 @@ if __name__ == "__main__":
 	todo.sort()
 	if args.random:
 		random.shuffle(todo)
+	if args.reverse:
+		todo.reverse()
 
 	pending = []
 
