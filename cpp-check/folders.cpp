@@ -412,13 +412,15 @@ bool State::fold_dest(K::Point_2 const &a, K::Point_2 const &b) {
 	}
 	*this = result;
 
-  if (from_noflip == 0) {
+#ifndef NDEBUG
+	if (from_noflip == 0) {
 		std::cerr << "WARNING: folded *everything*" << std::endl;
 	}
 	if (from_flip == 0) {
 		std::cerr << "WARNING: folded *nothing*" << std::endl;
 	}
-  return (from_flip > 0);
+#endif
+	return (from_flip > 0);
 }
 
 void State::print_solution(std::ostream& out) const {
