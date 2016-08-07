@@ -65,7 +65,7 @@ struct UnrollState {
 		}
 		SHA1_Final(&ctx, digest);
 
-		static_assert(SHA1_DIGEST_SIZE == 20);
+		static_assert(SHA1_DIGEST_SIZE == 20, "digest is big enough");
 		return *reinterpret_cast< uint64_t * >(&digest[0]); //don't bother folding. it's sha1.
 	}
 };

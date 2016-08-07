@@ -6,6 +6,7 @@ HEADERS := base.hpp structures.hpp utils.hpp rotations.hpp folders.hpp
 
 ifeq ($(UNAME),Darwin)
 	CPP=clang++ -std=c++11 -Wall -Werror -g
+	SDL_LIBS=-lSDL2 -framework OpenGL
 endif
 
 ifeq ($(UNAME),Linux)
