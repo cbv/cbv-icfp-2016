@@ -9,6 +9,10 @@
 
 #include "structures.hpp"
 
+// XXX Note that the solution size is not checked.
+
+// This is an independent copy of the get_score() so that we won't
+// accidentally destroy the correctness of check.cpp.
 CGAL::Gmpq check_solution(Problem const &problem, Solution const &solution) {
 	//To check this solution we'll use CGAL's polygon set functionality
 	
