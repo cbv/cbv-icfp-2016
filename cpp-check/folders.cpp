@@ -53,9 +53,7 @@ void Facet::compute_xf() {
 			) / len2;
 		xf[2] = (destination[0] - CGAL::ORIGIN) - (source[0].x() * xf[0] + source[0].y() * xf[1]);
 
-		assert(xf[0] * source[0].x() + xf[1] * source[0].y() + xf[2] == destination[0] - CGAL::ORIGIN);
-		assert(xf[0] * source[1].x() + xf[1] * source[1].y() + xf[2] == destination[1] - CGAL::ORIGIN);
-
+		//paranoia:
 		for (uint32_t i = 0; i < source.size(); ++i) {
 			assert(xf[0] * source[i].x() + xf[1] * source[i].y() + xf[2] == destination[i] - CGAL::ORIGIN);
 		}

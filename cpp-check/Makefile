@@ -38,7 +38,7 @@ get-convex : objs/get-convex.o objs/utils.o objs/structures.o objs/rotations.o o
 foldup : objs/foldup.o objs/utils.o objs/structures.o objs/folders.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL
 
-search-trees : objs/search-trees.o objs/utils.o objs/structures.o objs/sha1.o objs/Viz1.o
+search-trees : objs/search-trees.o objs/utils.o objs/structures.o objs/sha1.o objs/Viz1.o objs/folders.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL $(SDL_LIBS)
 
 show : objs/show.o objs/Viz1.o objs/utils.o objs/structures.o

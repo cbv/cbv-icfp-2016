@@ -1,6 +1,7 @@
 //search trees tries to unfold a problem by building a source from the facets of the skeleton.
 
 #include "structures.hpp"
+#include "folders.hpp"
 #include "sha1.hpp"
 #include "Viz1.hpp"
 
@@ -35,6 +36,9 @@ struct ActiveEdge {
 
 struct UnrollState {
 	uint64_t source_key = 0;
+	uint32_t added_face = -1U;
+	K::Vector_2 added_xf[3];
+
 	std::vector< ActiveEdge > active_edges;
 
 	std::set< uint32_t > unused_faces;
@@ -130,8 +134,8 @@ std::vector< SearchFace > faces;
 std::vector< CGAL::Gmpq > face_areas;
 
 int main(int argc, char **argv) {
-	if (argc != 2) {
-		std::cerr << "Usage:\n./search-trees <problem>" << std::endl;
+	if (argc != 2 && argc != 3) {
+		std::cerr << "Usage:\n./search-trees <problem> [file-to-write]" << std::endl;
 	}
 	std::unique_ptr< Problem > problem = Problem::read(argv[1]);
 	if (!problem) {
@@ -319,9 +323,8 @@ int main(int argc, char **argv) {
 	assert(face_areas.size() == faces.size());
 
 
-	std::unordered_map< Key, UnrollState > states;
+	UnrollState root;
 	{
-		UnrollState root;
 		root.unused_face_area = 0;
 		for (uint32_t f = 0; f < faces.size(); ++f) {
 			root.unused_faces.insert(f);
@@ -329,12 +332,12 @@ int main(int argc, char **argv) {
 		}
 		root.remaining_area = 1;
 		assert(root.remaining_area >= root.unused_face_area);
-
-		Key root_key = root.compute_key();
-		states.insert(std::make_pair(root_key, root));
 	}
-	auto const &root_key = states.begin()->first;
-	auto const &root = states.begin()->second;
+	Key root_key = root.compute_key();
+
+	//root isn't in states because root also looks like "solved" and that confuses the code.
+
+	std::unordered_map< Key, UnrollState > states;
 
 	struct {
 		uint32_t expanded = 0;
@@ -359,18 +362,62 @@ int main(int argc, char **argv) {
 		}
 	} stats;
 
+	auto report = [&stats,&states,&root_key,&argc,&argv](UnrollState const &end) {
+
+		stats.dump();
+		std::cerr << " ----- found solution -----" << std::endl;
+
+		assert(end.compute_key() == root_key); //solution always looks like root
+
+		State solution;
+		const UnrollState *at = &end;
+		while (true) {
+			assert(at->added_face < faces.size());
+			solution.emplace_back();
+			Facet &facet = solution.back();
+			for (auto const &d : faces[at->added_face].boundary) {
+				facet.destination.emplace_back(d);
+				facet.source.emplace_back(CGAL::ORIGIN + at->added_xf[0] * d.x() + at->added_xf[1] * d.y() + at->added_xf[2]);
+			}
+			assert(facet.source.size() == facet.destination.size());
+			//sanity check distances:
+			for (uint32_t i = 0; i < facet.destination.size(); ++i) {
+				for (uint32_t j = 0; j < facet.destination.size(); ++j) {
+					auto len2_src = (facet.source[i] - facet.source[j]) * (facet.source[i] - facet.source[j]);
+					auto len2_dst = (facet.destination[i] - facet.destination[j]) * (facet.destination[i] - facet.destination[j]);
+					assert(len2_src == len2_dst);
+				}
+			}
+			facet.compute_xf();
+
+			if (at->source_key == root_key) break;
+			auto f = states.find(at->source_key);
+			assert(f != states.end());
+			at = &f->second;
+		}
+
+		if (argc == 3) {
+			std::cerr << "   (writing to " << argv[2] << ")" << std::endl;
+			solution.print_solution(argv[2]);
+		} else {
+			solution.print_solution(std::cout);
+		}
+		exit(0);
+	};
 
 	//helper to manage expanding states:
-	auto try_adding_face = [&stats, states](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states) -> bool {
+	auto try_adding_face = [&stats, &states, &report](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states) -> bool {
+//#define DEBUG_ADD 1
 		assert(face_idx < faces.size());
 		assert(faces.size() == face_areas.size());
 
 		++stats.tried;
 
+		#ifdef DEBUG_ADD
 		std::vector< std::tuple< glm::vec2, glm::vec2, glm::u8vec4 > > show_lines;
 		static uint32_t count = 0;
 		count += 1;
-		if (count == 500) {
+		if (count > 0) {
 			count = 0;
 
 			show_lines.emplace_back(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::u8vec4(0xaa, 0x88, 0x88, 0xff));
@@ -410,14 +457,24 @@ int main(int argc, char **argv) {
 			}
 			show(show_lines, false);
 		}
+		#endif //DEBUG_ADD
 
 		UnrollState ns = us;
 		ns.source_key = key;
+		ns.added_face = face_idx;
+		ns.added_xf[0] = xf[0];
+		ns.added_xf[1] = xf[1];
+		ns.added_xf[2] = xf[2];
 
 		{ //area check:
 			//is there enough area left to place this face?
 			if (ns.remaining_area < face_areas[face_idx]) {
 				++stats.no_face_area;
+
+				#ifdef DEBUG_ADD
+				std::cerr << " -- no area for face" << std::endl; //DEBUG
+				#endif //DEBUG_ADD
+
 				return false;
 			}
 			ns.remaining_area -= face_areas[face_idx];
@@ -431,6 +488,11 @@ int main(int argc, char **argv) {
 			//is there enough area left for everything else?
 			if (ns.unused_face_area > ns.remaining_area) {
 				++stats.no_other_area;
+
+				#ifdef DEBUG_ADD
+				std::cerr << " -- no area unused" << std::endl; //DEBUG
+				#endif //DEBUG_ADD
+
 				return false;
 			}
 		}
@@ -452,6 +514,11 @@ int main(int argc, char **argv) {
 			 || xb.y() < 0 || xb.x() > 1) {
 				//xform takes face outside of valid source region
 				++stats.out_of_box;
+
+				#ifdef DEBUG_ADD
+				std::cerr << " -- out of box" << std::endl; //DEBUG
+				#endif //DEBUG_ADD
+
 				return false;
 			}
 
@@ -525,24 +592,31 @@ int main(int argc, char **argv) {
 							if ((*p == ae.a || *p == ae.b) && (*p == ne.a || *p == ne.b)) {
 								//intersects in a single endpoint, which is fine.
 							} else {
-							/* DEBUG
+								//intersects at a non-endpoint point
+								++stats.intersection;
+
+								#ifdef DEBUG_ADD
 								auto temp_lines = show_lines;
 								temp_lines.emplace_back(to_glm(*p) + glm::vec2( 0.1f, 0.1f), to_glm(*p) + glm::vec2(-0.1f,-0.1f), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 								temp_lines.emplace_back(to_glm(*p) + glm::vec2( 0.1f,-0.1f), to_glm(*p) + glm::vec2(-0.1f, 0.1f), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 								show(temp_lines);
-								*/
-								++stats.intersection;
+								std::cerr << " -- isect point" << std::endl;
+								#endif //DEBUG_ADD
+
 								return false;
 							}
 						} else {
-						/* DEBUG
+							//intersects in a segment
+							++stats.intersection;
+
+							#ifdef DEBUG_ADD
 							auto temp_lines = show_lines;
 							temp_lines.emplace_back(to_glm(ae.a), to_glm(ae.b), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 							temp_lines.emplace_back(to_glm(ne.a), to_glm(ne.b), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
 							show(temp_lines);
-						*/
-							//intersects at not an endpoint -- no good.
-							++stats.intersection;
+							std::cerr << " -- isect line" << std::endl;
+							#endif //DEBUG_ADD
+
 							return false;
 						}
 					}
@@ -559,20 +633,30 @@ int main(int argc, char **argv) {
 		}
 
 
-		if (ns.remaining_area == 0) {
-			assert(ns.unused_faces.empty()); //otherwise would have bailed already
-			//Found a solution!
-			std::cout << "Found solution!" << std::endl;
-			show(show_lines);
-			exit(0);
-		}
-
+	
 		Key ns_key = ns.compute_key();
+		//std::cout << ns_key << " from " << ns.source_key << std::endl; //DEBUG
 		if (!states.count(ns_key)) {
 			if (new_states->insert(std::make_pair(ns_key, ns)).second) {
 				++stats.added;
+
+				//std::cout << "adding with: "<< ns.remaining_area << std::endl; //DEBUG
+
+				if (ns.remaining_area == 0) {
+					assert(ns.unused_faces.empty()); //otherwise would have bailed already
+					report(ns);
+				}
+
 				return true;
+			} else {
+				#ifdef DEBUG_ADD
+				std::cerr << " -- not very new" << std::endl;
+				#endif //DEBUG_ADD
 			}
+		} else {
+			#ifdef DEBUG_ADD
+			std::cerr << " -- not new" << std::endl;
+			#endif //DEBUG_ADD
 		}
 		++stats.repeat;
 		return false;
@@ -721,7 +805,7 @@ int main(int argc, char **argv) {
 	//TODO: consider a priority queue
 	std::vector< Key > to_expand;
 	for (auto const &kv : states) {
-		if (kv.first == root_key) continue; //don't expand root explicitly
+		assert(kv.first != root_key); //root shouldn't be in states
 		to_expand.emplace_back(kv.first);
 	}
 
