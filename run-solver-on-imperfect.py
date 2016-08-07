@@ -10,6 +10,8 @@ import random
 
 def is_done(number):
 	db_dir = 'reptiloid-db/problem{0:06d}'.format(number)
+	if os.path.isfile(os.path.join(db_dir, "THIS_PROBLEM_IS_OURS")):
+		return True
 	done = False
 	try:
 		best = os.readlink(db_dir + '/best_submitted')
