@@ -5,7 +5,7 @@ UNAME := $(shell uname)
 HEADERS := base.hpp structures.hpp utils.hpp rotations.hpp folders.hpp
 
 ifeq ($(UNAME),Darwin)
-	CPP=clang++ -std=c++11 -Wall -Werror -g
+	CPP=clang++ -std=c++11 -Wall -Werror -g -O2
 	SDL_LIBS=-lSDL2 -framework OpenGL
 endif
 
