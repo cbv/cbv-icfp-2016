@@ -27,7 +27,7 @@ if __name__ == "__main__":
 	parser.add_argument("--timeout", help="solver timeout (0 == unlimited)", type=int, default=0)
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
-	parser.add_argument("--random", help="maximum problem number", type=bool, default=False)
+	parser.add_argument("--random", help="should the problems be shuffled?", type=bool, default=False)
 
 	args = parser.parse_args()
 

@@ -17,6 +17,11 @@ inline size_t count_non_whitespace (std::string &str) {
 	return count;
 }
 
+inline size_t vector_bit_complexity (const K::Vector_2 &vec) {
+	return vec.x().numerator().bit_size() + vec.x().denominator().bit_size()
+	     + vec.y().numerator().bit_size() + vec.y().denominator().bit_size();
+}
+
 template<typename OutputIterator>
 inline void make_square (const K::Vector_2 &x, const K::Point_2 &min, OutputIterator out) {
 	K::Vector_2 y = prep(x);
