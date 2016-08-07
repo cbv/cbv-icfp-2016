@@ -349,6 +349,7 @@ int main(int argc, char **argv) {
 		uint32_t no_other_area = 0;
 		uint32_t out_of_box = 0;
 		uint32_t intersection = 0;
+		uint32_t imperfect_overlap = 0;
 		uint32_t dead_ends = 0;
 		void dump() {
 			std::cerr << "Have expanded " << expanded << " states, tried to add " << tried << " and added " << added << ":\n"
@@ -357,6 +358,7 @@ int main(int argc, char **argv) {
 					<< "  " << no_other_area << " didn't have area for unused faces\n"
 					<< "  " << out_of_box << " were out of box\n"
 					<< "  " << intersection << " intersected active edges\n"
+					<< "  " << imperfect_overlap << " exactly overlapped different edges\n"
 					<< "  " << dead_ends << " discarded dead ends\n"
 				;
 				std::cerr.flush();
@@ -396,6 +398,25 @@ int main(int argc, char **argv) {
 			assert(f != states.end());
 			at = &f->second;
 		}
+#define DEBUG_SOLN 1
+#ifdef DEBUG_SOLN
+		{
+			std::vector< std::tuple< glm::vec2, glm::vec2, glm::u8vec4 > > lines;
+			for (auto const &facet : solution) {
+				for (uint32_t i = 0; i < facet.source.size(); ++i) {
+					lines.emplace_back(
+						to_glm(facet.source[i]), to_glm(facet.source[(i+1)%facet.source.size()]), glm::u8vec4(0xff, 0xff, 0xff, 0xff)
+					);
+					glm::vec2 ofs(2.0f, 0.0f);
+					lines.emplace_back(
+						to_glm(facet.destination[i]) + ofs, ofs + to_glm(facet.destination[(i+1)%facet.destination.size()]), glm::u8vec4(0x00, 0x00, 0x00, 0xff)
+					);
+					lines.emplace_back(to_glm(facet.source[i]), ofs + to_glm(facet.destination[i]), glm::u8vec4(0xff, 0x00, 0x00, 0x88));
+				}
+			}
+			show(lines);
+		}
+#endif
 
 		if (argc == 3) {
 			std::cerr << "   (writing to " << argv[2] << ")" << std::endl;
@@ -587,13 +608,17 @@ int main(int argc, char **argv) {
 			bool cancel = false;
 			for (auto const &ae : us.active_edges) {
 				if ( (ae.a == ne.a && ae.b == ne.b) || (ae.a == ne.b && ae.b == ne.a) ) {
-					//perfect overlap, edges cancel.
-					//...TODO.
-					assert(!cancel_active[&ae - &us.active_edges[0]]);
-					cancel_active[&ae - &us.active_edges[0]] = true;
-					assert(!cancel);
-					cancel = true;
-					break; //assume that perfect overlap implies no further problems
+					if (ae.a == ne.a && ae.b == ne.b && ae.edge == ne.edge) {
+						//perfect overlap, edges cancel.
+						assert(!cancel_active[&ae - &us.active_edges[0]]);
+						cancel_active[&ae - &us.active_edges[0]] = true;
+						assert(!cancel);
+						cancel = true;
+						break; //assume that perfect overlap implies no further problems
+					} else {
+						++stats.imperfect_overlap;
+						return false;
+					}
 				} else {
 					auto result = CGAL::intersection(K::Segment_2(ae.a, ae.b), K::Segment_2(ne.a, ne.b));
 					if (result) {
