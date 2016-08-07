@@ -196,8 +196,24 @@ val sol2 =
 (*val _ = draw_sol startsol*)
 (* val _ = draw_sol (fold_sol ((0, 1), (1, 2)) startsol)*)
 
+val sol3 =
+    startsol
+        |> fold_sol ((2, 1), (0, 1))
+        |> fold_sol ((~1, 1), (3, 2))
+        |> fold_sol ((2, 3), (0, 1))
 
-val which = sol2
+val sol4 =
+    startsol
+        |> fold_sol ((1, 1), (0, 1))
+        |> fold_sol ((1, 1), (1, 2))
+        |> fold_sol ((1, 1), (2, 3))
+(*        |> fold_sol ((1, 1), (3, 4))
+        |> fold_sol ((1, 1), (4, 5)) *)
+        |> fold_sol ((0, 1), (3, 4))
+
+
+val which = sol4
+
 
 fun i32s (n : Int32.int) =
  if Int32.<(n, (0: Int32.int)) then "-" ^ Int32.toString(Int32.~ n)
