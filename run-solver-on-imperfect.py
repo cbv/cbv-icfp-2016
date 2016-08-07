@@ -135,7 +135,6 @@ if __name__ == "__main__":
 						error_file.flush()
 					if os.path.exists(soln_file):
 						print("  (will try to submit anyway)")
-						#TODO
 				if os.path.exists(soln_file):
 					print("Submitting " + soln_file)
 					subprocess.call(['./reptiloid.py', str(number), soln_file])
