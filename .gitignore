@@ -11,3 +11,5 @@ cpp-check/get-convex
 cpp-check/search-trees
 *.dSYM
 vis/vis
+TMP-*.txt
+TMP-*.txt-norm

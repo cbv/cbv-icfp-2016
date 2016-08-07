@@ -6,8 +6,14 @@ int main(int argc, char **argv) {
 		std::cerr << "Usage:\n./show <solution|problem>\n (Will try to parse as solution and problem.)" << std::endl;
 		return 1;
 	}
-	std::unique_ptr< Solution > solution = Solution::read(argv[1]);
-	std::unique_ptr< Problem > problem = Problem::read(argv[1]);
+	std::unique_ptr< Solution > solution;
+	try {
+		solution = Solution::read(argv[1]);
+	} catch (...) { }
+	std::unique_ptr< Problem > problem;
+	try {
+		problem = Problem::read(argv[1]);
+	} catch (...) { }
 
 	if (solution && problem) {
 		std::cerr << "ERROR: That parsed as both a solution and a problem. Not sure how to deal with it." << std::endl;
