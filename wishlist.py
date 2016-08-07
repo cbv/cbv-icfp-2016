@@ -133,7 +133,7 @@ for prob in problems:
         elif exists(pid):
             c = which_class(pid)
             for o_pid in classes[c] + [c]:
-                if not is_solved(o_prob['problem_id']):
+                if not is_solved(o_pid):
                     o_prob = get_prob(o_pid)
                     prob['equiv_score'] += o_prob['delta_score']
             if prob['equiv_score'] > 0:
@@ -144,7 +144,7 @@ for prob in problems:
         if exists(pid):
             c = which_class(pid)
             for o_pid in classes[c] + [c]:
-                if is_solved(o_prob['problem_id']):
+                if is_solved(o_pid):
                     dup_solved = True
                     break
                 o_prob = get_prob(o_pid)
