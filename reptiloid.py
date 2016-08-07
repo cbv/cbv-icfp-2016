@@ -104,10 +104,10 @@ if __name__ == "__main__":
             # we've already submitted this
             eprint("We've already submitted this solution.")
             should_submit = False
-        elif approx_float < old_best_score:
-            eprint("We've already submitted a better solution for this problem.")
+        elif approx_float <= old_best_score:
+            eprint("We've already submitted an as-good solution for this problem.")
             should_submit = False
-        elif approx_float == old_best_score and old_size <= new_size:
+        elif approx_float == old_best_score and old_size <= new_size: # note: this case is now dead
             eprint("We've already submitted a smaller solution with the same score for this problem.")
             should_submit = False
 
