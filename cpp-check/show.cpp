@@ -229,6 +229,7 @@ int main(int argc, char **argv) {
 			}
 			draw_poly_edges (poly, 0., 0., 0.);
 			draw_poly_inner (poly, 0., 0., 0., 0.1);
+			draw_poly_vertices (poly, 1., 0., 1., 0.4);
 		}
 
 		if (problem) {
