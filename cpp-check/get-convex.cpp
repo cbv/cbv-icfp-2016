@@ -86,9 +86,8 @@ int main(int argc, char **argv) {
 
 	auto get_score = [&hull,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
 		CGAL::Polygon_2< K > square;
-		{ //build square from min/max:
-			// auto center = min + (max - min)/2;
-			make_square(x, min, std::back_inserter(square));
+		{
+			insert_square(x, min, std::back_inserter(square));
 			assert(square.orientation() == CGAL::COUNTERCLOCKWISE);
 		}
 		CGAL::Polygon_set_2<K> final_shape;
@@ -98,16 +97,9 @@ int main(int argc, char **argv) {
 
 
 	auto get_fold = [&hull](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
-		//std::cerr << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
 		Facet square;
-		/*
-		make_centered_square(K::Vector_2(1,0),K::Point_2(0.5,0.5),back_inserter(square.source));
-		make_centered_square(x,center,back_inserter(square.destination));
-		*/
-		make_square(K::Vector_2(1,0),K::Point_2(0,0),back_inserter(square.source));
-		make_square(x,min,back_inserter(square.destination));
-		//std::cerr << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
-		//std::cerr << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
+		insert_square(K::Vector_2(1,0), CGAL::ORIGIN, back_inserter(square.source));
+		insert_square(x, min, back_inserter(square.destination));
 		square.compute_xf();
 		State state;
 		state.push_back (square);
@@ -126,15 +118,6 @@ int main(int argc, char **argv) {
 
 	CGAL::Gmpq best_score = 0;
 	std::string best_solution;
-	/*
-	struct {
-		K::Vector_2 x;
-		K::Point_2 min, max;
-	} best;
-	State best_state;
-	bool exact_found = false;
-	for (auto pass : {'e', '~'}) //in first pass, look for an exact wrapping, in second pass check approximate
-	*/
 	// TODO do the exact/approximate phases
 	for (auto const &x_dir : x_dirs) {
 		assert(x_dir * x_dir == 1);
@@ -152,18 +135,15 @@ int main(int argc, char **argv) {
 			if (y < min_y) min_y = y;
 			if (y > max_y) max_y = y;
 		}
-		//bool fits = true;
 		if (max_x > min_x + 1) {
 			auto c = (max_x + min_x) / 2;
 			min_x = c - CGAL::Gmpq(1,2);
 			max_x = c + CGAL::Gmpq(1,2);
-		//	fits = false;
 		}
 		if (max_y > min_y + 1) {
 			auto c = (max_y + min_y) / 2;
 			min_y = c - CGAL::Gmpq(1,2);
 			max_y = c + CGAL::Gmpq(1,2);
-		//	fits = false;
 		}
 		auto score = get_score(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
 		if (score > best_score) {
@@ -177,7 +157,8 @@ int main(int argc, char **argv) {
 #endif
 				continue;
 			}
-			std::cerr << "Best score so far: " << score << " ~= " << score.to_double() << std::endl;
+			std::cerr << "Best score so far: " << score;
+			std::cerr << " ~= " << std::fixed << std::setprecision(7) << score.to_double() << std::endl;
 
 			best_score = score;
 			best_solution = solution;
@@ -185,13 +166,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	/*
-	if (exact_found) {
-		std::cerr << "Found exact wrapping. This is as good as we can do." << std::endl;
-	} else {
-		std::cerr << "Using approximate wrapping." << std::endl;
-	}
-	*/
 	if (argc == 3) {
 		std::cerr << "(Writing to " << argv[2] << ")" << std::endl;
 		std::ofstream file(argv[2]);
