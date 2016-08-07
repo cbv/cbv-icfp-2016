@@ -900,7 +900,7 @@ int main(int argc, char **argv) {
 			}
 */
 
-/*
+
 		//(JIM sez: this works okay -- some variation and then it latches on to a solution)
 		//anything from a range of reasonably good things:
 			std::vector< decltype(sel) > possible;
@@ -913,7 +913,7 @@ int main(int argc, char **argv) {
 				possible.emplace_back(sel);
 			}
 			sel = possible[mt() % possible.size()];
-*/
+/*
 
 		//(JIM sez: I like this one)
 		//take the next thing with exponentially-decaying chances:
@@ -924,7 +924,7 @@ int main(int argc, char **argv) {
 				if (mt() < mt.max() / 3) break;
 				sel = next;
 			}
-
+*/
 //-----=     E N D      =------
 
 			key = sel->second;
