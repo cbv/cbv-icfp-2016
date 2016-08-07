@@ -61,6 +61,13 @@ fun intersect_poly (a, b)
         val fnexti =
             if List.length source = List.length dest then List.length source
             else raise Invalid
+        fun find (x, y) l n =
+            case l of
+                [] => NONE
+              | (x', y')::t =>
+                if Rat.cmp op= (x, x') andalso Rat.cmp op= (y, y') then
+                    SOME n
+                else find (x, y) t (Int32.+ (n, 1))
         fun iter es =
             case es of
                 [] => ([], [], [])
@@ -78,18 +85,27 @@ fun intersect_poly (a, b)
                 in
                     case intersect (a, b) (d1, d2) of
                         New t =>
-                        (print ("new point: " ^ (pointToString
-                                                     (intpt t (d1, d2))) ^ "\n");
-                        (s' @ [intpt t (s1, s2)], i1::nexti::e',
-                         d' @ [intpt t (d1, d2)]))
-                      | _ => (s', i1::e', d')
+                        let val newp = intpt t (s1, s2)
+                        in
+                            case find newp (source @ s') 0 of
+                                NONE =>
+                                (print ("new point: " ^ (pointToString
+                                                             (intpt t (d1, d2))) ^ "\n");
+                                 (s' @ [intpt t (s1, s2)],
+                                  (false, i1)::(true, nexti)::e',
+                                  d' @ [intpt t (d1, d2)]))
+                              | SOME exi =>
+                                (s', (false, i1)::(true, exi)::e', d')
+                        end
+                      | Source => (s', (true, i1)::e', d')
+                      | _ => (s', (false, i1)::e', d')
                 end
         val (s', e', d') = iter (edges (facet @ [List.hd facet]))
         fun split_poly is (is1, is2) =
             case is of
                 [] => (is1, is2)
-              | i::t =>
-                if Int32.>= (i, fnexti) then
+              | (b, i)::t =>
+                if b then
                     split_poly t (i::is2, i::is1)
                 else
                     split_poly t (i::is1, is2)
@@ -115,7 +131,7 @@ fun reflect_pt (a, b) (x, y) =
 (* Fold sol along line  ax + b*)
 fun fold_sol (a, b) (sol as (source, facets, dest) : sol) : sol =
     let val (s', f', d') = List.foldl (intersect_poly (a, b))
-                                      sol
+                                      (source, [], dest)
                                       facets
         fun maybe_reflect_pt (x, y) =
             if Rat.cmp op< (y, (Rat.add (Rat.mult (a, x), b))) then
@@ -183,7 +199,7 @@ val sol0 =
   startsol
 |> fold_sol ((0,1),(1,2))
 
-val sol1 = 
+val sol1 =
   startsol
 |> fold_sol ((0,1),(1,2))
 |> fold_sol ((0,1),(3,4))
@@ -198,9 +214,9 @@ val sol2 =
 
 val sol3 =
     startsol
-        |> fold_sol ((2, 1), (0, 1))
-        |> fold_sol ((~1, 1), (3, 2))
-        |> fold_sol ((2, 3), (0, 1))
+        |> fold_sol ((~2, 1), (1, 1))
+        |> fold_sol ((1, 1), (~1, 2))
+        |> fold_sol ((~2, 3), (1, 1))
 
 val sol4 =
     startsol
@@ -212,7 +228,7 @@ val sol4 =
         |> fold_sol ((0, 1), (3, 4))
 
 
-val which = sol4
+val which = sol3
 
 
 fun i32s (n : Int32.int) =
