@@ -140,7 +140,8 @@ int main(int argc, char **argv) {
 		std::cerr << "Usage:\n./search-trees <problem> [file-to-write]" << std::endl;
 		return 1;
 	}
-	std::unique_ptr< Problem > problem = Problem::read(argv[1]);
+	std::string prob_name = argv[1];
+	std::unique_ptr< Problem > problem = Problem::read(prob_name);
 	if (!problem) {
 		std::cerr << "ERROR: Failed to read problem." << std::endl;
 		return 1;
@@ -367,10 +368,10 @@ int main(int argc, char **argv) {
 		}
 	} stats;
 
-	auto report = [&stats,&states,&root_key,&argc,&argv](UnrollState const &end) {
+	auto report = [&stats,&states,&root_key,&argc,&argv,&prob_name](UnrollState const &end) {
 
 		stats.dump();
-		std::cerr << " ----- found solution -----" << std::endl;
+		std::cerr << " ----- found solution to [" << prob_name << "]-----" << std::endl;
 
 		assert(end.compute_key() == root_key); //solution always looks like root
 
@@ -989,6 +990,6 @@ int main(int argc, char **argv) {
 
 	stats.dump();
 
-	std::cerr << "ERROR: shouldn't have finished without solving." << std::endl;
+	std::cerr << "ERROR: shouldn't have finished [" << prob_name << "] without solving." << std::endl;
 	return 1; //this *should* be complete, so it's weird.
 }
