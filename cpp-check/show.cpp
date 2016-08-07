@@ -73,9 +73,8 @@ void draw_poly_vertices (CGAL::Polygon_2<K> const& poly, float r, float g, float
 typedef CGAL::Partition_traits_2< K > P;
 inline
 void draw_convex_poly_inner (P::Polygon_2 const& poly, float r, float g, float b, float a=1.0f) {
-	/*//assert (poly.is_counterclockwise_oriented()); //<--- doesn't matter, and is violated somtimes
-	assert (poly.is_simple()); //these might be violated by approximate decomposition?
-	assert (poly.is_convex()); */
+	assert (poly.is_simple());
+	assert (poly.is_convex());
 	glBegin(GL_TRIANGLE_FAN);
 	glColor4f(r, g, b, a);
 	for (auto p = poly.vertices_begin(); p != poly.vertices_end(); ++p) {
@@ -91,7 +90,8 @@ void draw_poly_inner (CGAL::Polygon_2<K> poly, float r, float g, float b, float 
 	}
 	assert (poly.is_simple());
 	std::vector< P::Polygon_2 > convex_partition;
-	CGAL::optimal_convex_partition_2(poly.vertices_begin(),
+	// the optimal solver is buggy (ex: prob22)
+	CGAL::approx_convex_partition_2(poly.vertices_begin(),
 		poly.vertices_end(),
 		std::back_inserter(convex_partition));
 	
