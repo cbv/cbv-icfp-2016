@@ -27,9 +27,11 @@ if __name__ == "__main__":
 	parser.add_argument("--timeout", help="solver timeout (0 == unlimited)", type=int, default=0)
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
+	parser.add_argument("--include", help="list of problems to include", type=str, default="")
 
 	parser.add_argument("--log-timeouts", help="file to store timeout problem numbers", type=str, default='')
 	parser.add_argument("--log-errors", help="file to store solver error problem numbers", type=str, default='')
+
 
 	parser.add_argument("--normalize", help="call the named utility on each solution before submitting", type=str, default='')
 
@@ -60,10 +62,25 @@ if __name__ == "__main__":
 		break
 	print("Have " + str(len(problem_files)) + " problems.")
 
+	include = None
+	if args.include:
+		include = set()
+		with open(args.include, 'r') as f:
+			for n in re.split(r'\s+', " ".join(f.readlines())):
+				try:
+					include.add(int(n))
+				except:
+					pass #worst file handling ever
+		print("Specifically including " + str(len(include)) + " files.")
+				
+
+
 	todo = []
 	for problem_file in problem_files:
 		number = int(problem_file[4:])
 		if number < args.min or number > args.max:
+			continue
+		if include is not None and number not in include:
 			continue
 		if not is_done(number):
 			todo.append(number)
@@ -118,16 +135,16 @@ if __name__ == "__main__":
 						error_file.flush()
 					if os.path.exists(soln_file):
 						print("  (will try to submit anyway)")
-						#TODO
 				if os.path.exists(soln_file):
 					print("Submitting " + soln_file)
 					subprocess.call(['./reptiloid.py', str(number), soln_file])
 					if args.normalize != '':
+						time.sleep(1) #rate limit
 						print("Normalizing and re-submitting " + soln_file)
 						norm_file = soln_file + '-norm'
 						subprocess.call([args.normalize, soln_file, norm_file])
-						time.sleep(1) #rate limit
 						subprocess.call(['./reptiloid.py', str(number), norm_file])
+						time.sleep(1) #rate limit
 						if args.cleanup:
 							try:
 								os.unlink(norm_file)

@@ -205,6 +205,17 @@ int main(int argc, char **argv) {
 			}
 			draw_poly_edges (poly, 0., 0., 0.);
 			draw_poly_inner (poly, 0., 0., 0., 0.3);
+			glBegin(GL_LINES);
+			glColor3f(1.0f, 0.0f, 1.0f);
+			for (auto const &i : f) {
+				double x = CGAL::to_double(solution->destination[i].x());
+				double y = CGAL::to_double(solution->destination[i].y());
+				glVertex2f(x-0.1f,y-0.1f);
+				glVertex2f(x+0.1f,y+0.1f);
+				glVertex2f(x-0.1f,y+0.1f);
+				glVertex2f(x+0.1f,y-0.1f);
+			}
+			glEnd();
 		}
 
 		if (problem) {

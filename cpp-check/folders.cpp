@@ -527,12 +527,6 @@ State State::normalized() const {
 				}
 			}
 		}
-
-		merged.destination.reserve(merged.source.size());
-		for (auto const &s : merged.source) {
-			merged.destination.emplace_back( CGAL::ORIGIN + merged.xf[0] * s.x() + merged.xf[1] * s.y() + merged.xf[2] );
-		}
-
 		return merged;
 	};
 
@@ -595,8 +589,45 @@ State State::normalized() const {
 			}
 			if (progress) break;
 		}
+	}
+
+	//now that facets are merged, get rid of colinear verts in each facet:
+	for (auto &f : solution) {
+		bool removed = true;
+		while (removed) {
+			removed = false;
+			uint32_t s = 0;
+			while (s < f.source.size()) {
+				assert(f.source.size() >= 3);
+				auto const &a = f.source[s];
+				auto const &b = f.source[(s+1)%f.source.size()];
+				auto const &c = f.source[(s+2)%f.source.size()];
+				if (K::Line_2(a,c).projection(b) == b) {
+					uint32_t i = (s+1)%f.source.size();
+					f.source.erase(f.source.begin() + i);
+					if (i < s) s -= 1;
+					assert(s < f.source.size());
+					removed = true;
+				} else {
+					//go to next pattern:
+					++s;
+				}
+			}
+		}
 
 	}
+
+	
+	//fix up destinations again:
+	for (auto &f : solution) {
+		f.destination.clear();
+		f.destination.reserve(f.source.size());
+		for (auto const &s : f.source) {
+			f.destination.emplace_back( CGAL::ORIGIN + f.xf[0] * s.x() + f.xf[1] * s.y() + f.xf[2] );
+		}
+	}
+
+
 
 	return solution;
 
