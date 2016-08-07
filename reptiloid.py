@@ -129,6 +129,10 @@ if __name__ == "__main__":
                 eprint("Retrying after status code 502...")
                 time.sleep(1)
                 continue
+            elif response.status_code == 403 and response.json()["error"] == "Can not submit a solution to an own problem.":
+                eprint("Oops, this problem is one that we submitted.")
+                open(os.path.join(outdir, "THIS_PROBLEM_IS_OURS"), 'a').close()
+                exit(1)
             else:
                 eprint("Error from server.")
                 eprint(response.json())
