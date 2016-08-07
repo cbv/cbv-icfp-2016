@@ -6,6 +6,7 @@ import os
 import time
 import re
 import signal
+import random
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Run a solver on every problem that hasn't been perfectly solved.")
@@ -43,6 +44,7 @@ if __name__ == "__main__":
 	print("Of which " + str(len(todo)) + " are not perfectly solved.")
 
 	#TODO: could sort in some order, I guess
+	random.shuffle(todo)
 
 	pending = []
 

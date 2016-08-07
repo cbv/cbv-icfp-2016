@@ -51,12 +51,8 @@ struct UnrollState {
 		names.reserve(active_edges.size());
 		for (auto const &e : active_edges) {
 			std::ostringstream name;
-			//I think this was being slightly too good about disambiguating things
-			//if (e.a.x() < e.b.x() || (e.a.x() == e.b.x() && e.a.y() <= e.b.y())) {
+			//this was being slightly too good about disambiguating things when it sorted the endpoints.
 			name << e.perp_is_out << "|" << e.edge << "|" << e.a.x() << "|" << e.a.y() << "|" << e.b.x() << "|" << e.b.y();
-			//} else {
-			//	name << e.perp_is_out << "|" << e.edge << "|" << e.b.x() << "|" << e.b.y() << "|" << e.a.x() << "|" << e.a.y();
-			//}
 			names.emplace_back(name.str());
 		}
 		std::sort(names.begin(), names.end());
@@ -398,7 +394,6 @@ int main(int argc, char **argv) {
 			assert(f != states.end());
 			at = &f->second;
 		}
-#define DEBUG_SOLN 1
 #ifdef DEBUG_SOLN
 		{
 			std::vector< std::tuple< glm::vec2, glm::vec2, glm::u8vec4 > > lines;
