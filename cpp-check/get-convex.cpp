@@ -181,8 +181,13 @@ int main(int argc, char **argv) {
 					} else {
 						std::cout << best_solution;
 					}
+				} else {
+					if (argc == 3 && count <= solution_size_limit) {
+						std::cerr << "  (Writing to " << argv[2] << ")" << std::endl;
+						std::ofstream file(argv[2]);
+						file << best_solution;
+					}
 				}
-
 
 				best_count = count;
 				best_solution = solution;
