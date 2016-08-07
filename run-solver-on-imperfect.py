@@ -140,11 +140,12 @@ if __name__ == "__main__":
 					print("Submitting " + soln_file)
 					subprocess.call(['./reptiloid.py', str(number), soln_file])
 					if args.normalize != '':
+						time.sleep(1) #rate limit
 						print("Normalizing and re-submitting " + soln_file)
 						norm_file = soln_file + '-norm'
 						subprocess.call([args.normalize, soln_file, norm_file])
-						time.sleep(1) #rate limit
 						subprocess.call(['./reptiloid.py', str(number), norm_file])
+						time.sleep(1) #rate limit
 						if args.cleanup:
 							try:
 								os.unlink(norm_file)
