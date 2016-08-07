@@ -126,7 +126,7 @@ if __name__ == "__main__":
                 os.rename(tmplink, symlinkfile)
                 eprint("Success.")
                 exit(0)
-			elif response.status_code == 429:
+	    elif response.status_code == 429:
                 eprint("Retrying after status code 429...")
                 time.sleep(2 + random.random())
                 continue
