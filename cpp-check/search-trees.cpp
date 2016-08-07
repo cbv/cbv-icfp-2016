@@ -10,6 +10,8 @@
 #include <CGAL/Arr_curve_data_traits_2.h>
 
 #include <unordered_map>
+#include <random>
+#include <ctime>
 
 typedef uint64_t Key;
 
@@ -881,8 +883,53 @@ int main(int argc, char **argv) {
 				count = 0;
 			}
 		}
-		Key key = to_expand.begin()->second;
-		to_expand.erase(to_expand.begin());
+		Key key;
+		{
+			auto sel = to_expand.begin();
+			static std::mt19937 mt(std::clock());
+//-----= RANDOMIZATION SPOT =------
+
+/*
+			//(JIM sez: this seems like a pessimal option)
+			//Simple, fully random, expansion order:
+			// --> this makes things a *lot* slower
+			uint32_t inc = mt() % to_expand.size();
+			while (inc > 0) {
+				--inc;
+				++sel;
+			}
+*/
+
+/*
+		//(JIM sez: this works okay -- some variation and then it latches on to a solution)
+		//anything from a range of reasonably good things:
+			std::vector< decltype(sel) > possible;
+			possible.emplace_back(sel);
+			auto max = sel->first + 0.1; //set to something larger than 0.0 for a bit of wiggle. These are source areas.
+			while (1) {
+				++sel;
+				if (sel == to_expand.end()) break;
+				if (sel->first > max) break;
+				possible.emplace_back(sel);
+			}
+			sel = possible[mt() % possible.size()];
+*/
+
+		//(JIM sez: I like this one)
+		//take the next thing with exponentially-decaying chances:
+			while(1) {
+				auto next = sel;
+				++next;
+				if (next == to_expand.end()) break;
+				if (mt() < mt.max() / 3) break;
+				sel = next;
+			}
+
+//-----=     E N D      =------
+
+			key = sel->second;
+			to_expand.erase(sel);
+		}
 		++stats.expanded;
 
 		assert(states.count(key));
@@ -898,8 +945,12 @@ int main(int argc, char **argv) {
 			K::Point_2 const *low_pt = &(expand_edge->a);
 
 			auto better = [](K::Point_2 const &a, K::Point_2 const &b) {
+			//This is the other guidance spot.
+				return std::max(a.x(), a.y()) < std::max(b.x(), b.y());
+			/*
 				if (a.y() != b.y()) return a.y() < b.y();
 				else return a.x() < b.x();
+			*/
 			};
 			for (auto const &ae : us.active_edges) {
 				K::Point_2 const *edge_pt = better(ae.a, ae.b) ? &ae.a : &ae.b;
