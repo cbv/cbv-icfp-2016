@@ -819,7 +819,7 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
-		seed_stats.dump();
+		//seed_stats.dump();
 	}
 
 
