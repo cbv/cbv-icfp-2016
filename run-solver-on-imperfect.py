@@ -28,6 +28,9 @@ if __name__ == "__main__":
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
 
+	parser.add_argument("--log-timeouts", help="file to store timeout problem numbers", type=str, default='')
+	parser.add_argument("--log-errors", help="file to store solver error problem numbers", type=str, default='')
+
 	parser.add_argument("--normalize", help="call the named utility on each solution before submitting", type=str, default='')
 
 	parser.add_argument("--random", help="should the problems be shuffled?", dest='random', action='store_true')
@@ -40,6 +43,14 @@ if __name__ == "__main__":
 	parser.set_defaults(cleanup=True)
 
 	args = parser.parse_args()
+
+	timeout_file = None
+	if args.log_timeouts != '':
+		timeout_file = open(args.log_timeouts, 'w')
+
+	error_file = None
+	if args.log_errors != '':
+		error_file = open(args.log_errors, 'w')
 
 	problem_files = []
 	for root, dirs, files in os.walk('problems'):
@@ -91,6 +102,9 @@ if __name__ == "__main__":
 
 			if proc.poll() == None:
 				if args.timeout != 0 and elapsed > args.timeout:
+					if timeout_file is not None:
+						timeout_file.write(str(number) + '\n')
+						timeout_file.flush()
 					print("Killing " + " ".join(proc.args))
 					proc.kill()
 					proc.send_signal(9)
@@ -99,6 +113,9 @@ if __name__ == "__main__":
 			else:
 				if proc.returncode != 0:
 					print("Got error running: '" + " ".join(proc.args) + "'")
+					if error_file is not None:
+						error_file.write(str(number) + '\n')
+						error_file.flush()
 					if os.path.exists(soln_file):
 						print("  (will try to submit anyway)")
 						#TODO
