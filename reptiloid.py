@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import time
+import random
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -125,6 +126,10 @@ if __name__ == "__main__":
                 os.rename(tmplink, symlinkfile)
                 eprint("Success.")
                 exit(0)
+			elif response.status_code == 429:
+                eprint("Retrying after status code 429...")
+                time.sleep(2 + random.random())
+                continue
             elif response.status_code == 502:
                 eprint("Retrying after status code 502...")
                 time.sleep(1)
