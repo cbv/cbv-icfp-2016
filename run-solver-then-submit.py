@@ -6,8 +6,8 @@ import subprocess
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check and possibly submit a solution.")
-    parser.add_argument("problem_number", type=int, help="problem number")
     parser.add_argument("solver", help="solver binary")
+    parser.add_argument("problem_number", type=int, help="problem number")
 
     args = parser.parse_args()
 
