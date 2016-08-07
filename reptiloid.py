@@ -10,13 +10,13 @@ import subprocess
 import sys
 import time
 
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 CHECKER_BINARY = "./cpp-check/check"
 
 API_KEY = "129-7af108ba768db1f95140f91e3c4d34e4"
 HEADERS = {'Expect': '', 'X-API-Key': API_KEY}
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check and possibly submit a solution.")
@@ -112,20 +112,26 @@ if __name__ == "__main__":
 
     if should_submit:
         eprint("submitting...")
-        response = requests.post("http://2016sv.icfpcontest.org/api/solution/submit", headers = HEADERS,
-                                 data = {"problem_id": problem_number, "solution_spec": solution_string})
-        eprint(response)
-        if response.status_code != 200:
-            eprint("Error from server.")
-            exit(1)
-        else:
-            response_json = response.json()
-            eprint(response_json)
-            # update the symlink
-            tmplink = "tmp.{}".format(int(time.time() * 10))
-            os.symlink(solution_name, tmplink)
-            os.rename(tmplink, symlinkfile)
-            eprint("Success.")
+        for retry_num in range(0,3):
+            response = requests.post("http://2016sv.icfpcontest.org/api/solution/submit", headers = HEADERS,
+                                     data = {"problem_id": problem_number, "solution_spec": solution_string})
+            eprint(response)
+            if response.status_code == 200:
+                response_json = response.json()
+                eprint(response_json)
+                # update the symlink
+                tmplink = "tmp.{}".format(int(time.time() * 10))
+                os.symlink(solution_name, tmplink)
+                os.rename(tmplink, symlinkfile)
+                eprint("Success.")
+                exit(0)
+            elif response.status_code == 502:
+                eprint("Retrying after status code 502...")
+                time.sleep(1)
+                continue
+            else:
+                eprint("Error from server.")
+                exit(1)
 
 
 
