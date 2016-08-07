@@ -88,10 +88,10 @@ int main(int argc, char **argv) {
 		CGAL::Polygon_2< K > square;
 		{
 			insert_square(x, min, std::back_inserter(square));
-			assert(square.orientation() == CGAL::COUNTERCLOCKWISE);
+			assert(square.is_counterclockwise_oriented());
 		}
 		CGAL::Polygon_set_2<K> final_shape;
-		final_shape.join(hull); final_shape.intersection(square);
+		final_shape.intersection(hull,square);
 		return problem->get_score(final_shape);
 	};
 
