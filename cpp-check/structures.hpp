@@ -4,6 +4,8 @@
 
 #include <CGAL/Polygon_set_2.h>
 
+const size_t solution_size_limit = 5000;
+
 struct Problem {
 	std::vector< std::vector< K::Point_2 > > silhouette;
 	std::vector< std::pair< K::Point_2, K::Point_2 > > skeleton;

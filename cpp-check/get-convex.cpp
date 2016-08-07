@@ -32,15 +32,6 @@ bool fold_excess (State& state, const CGAL::Polygon_2<K>& goal) {
 	return old_facets != state.size();
 }
 
-template<typename OutputIterator>
-void make_centered_square (const K::Vector_2 &x, const K::Point_2 &center, OutputIterator out) {
-	K::Vector_2 y = prep(x);
-	*(out++) = center-x/2-y/2;
-	*(out++) = center+x/2-y/2;
-	*(out++) = center+x/2+y/2;
-	*(out++) = center-x/2+y/2;
-}
-
 int main(int argc, char **argv) {
 	if (argc != 2 && argc != 3) {
 		std::cerr << "Usage:\n\t./get-convex <problem> [solution-to-write]\n" << std::endl;
@@ -64,11 +55,16 @@ int main(int argc, char **argv) {
 	CGAL::Polygon_2<K> hull;
 	CGAL::convex_hull_2(points.begin(), points.end(), std::back_inserter( hull ));
 	std::cerr << "Hull has " << hull.size() << " points." << std::endl;
+	assert(hull.orientation() == CGAL::COUNTERCLOCKWISE);
 
 	// get directions
-	std::vector< K::Vector_2 > x_dirs = unit_vectors();
-	
+	std::list< K::Vector_2 > x_dirs;
+	{
+		std::vector< K::Vector_2 > x_dirs_tmp = unit_vectors();
+		x_dirs = std::list<K::Vector_2>(x_dirs_tmp.begin(), x_dirs_tmp.end());
+	}
 
+	std::cerr << "Adding edges in the convex hull..." << std::endl;
 	{ //add directions that can be made rational:
 		uint_fast32_t exact = 0;
 		uint_fast32_t inexact = 0;
@@ -76,11 +72,12 @@ int main(int argc, char **argv) {
 			auto pair = pythagorean_unit_approx(ei->to_vector());
 			if (pair.first) {
 				++exact;
+				x_dirs.emplace(x_dirs.begin(), pair.second);
 			} else {
 				++inexact;
 				std::cerr << "Approximate " << *ei << " by " << pair.second << "." << std::endl;
+				x_dirs.emplace_back(pair.second);
 			}
-			x_dirs.emplace_back(pair.second);
 		}
 		std::cerr << "Addded " << exact << " exact directions and " << inexact << " inexact directions." << std::endl;
 	}
@@ -88,11 +85,10 @@ int main(int argc, char **argv) {
 	auto get_score = [&hull,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
 		CGAL::Polygon_2< K > square;
 		{ //build square from min/max:
-			auto center = min + (max - min)/2;
-			make_centered_square(x, center, std::back_inserter(square));
+			// auto center = min + (max - min)/2;
+			make_square(x, min, std::back_inserter(square));
 			assert(square.orientation() == CGAL::COUNTERCLOCKWISE);
 		}
-		assert(hull.orientation() == CGAL::COUNTERCLOCKWISE);
 		CGAL::Polygon_set_2<K> final_shape;
 		final_shape.join(hull); final_shape.intersection(square);
 		return problem->get_score(final_shape);
@@ -101,16 +97,18 @@ int main(int argc, char **argv) {
 
 	auto get_fold = [&hull](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
 		//std::cerr << "Running get_fold for the inputs x=" << x << " and min=" << min << " and max=" << max << "." << std::endl;
-		auto center = min + (max - min)/2;
 		Facet square;
+		/*
 		make_centered_square(K::Vector_2(1,0),K::Point_2(0.5,0.5),back_inserter(square.source));
 		make_centered_square(x,center,back_inserter(square.destination));
+		*/
+		make_square(K::Vector_2(1,0),K::Point_2(0,0),back_inserter(square.source));
+		make_square(x,min,back_inserter(square.destination));
 		//std::cerr << "The source is " << CGAL::Polygon_2<K>(square.source.begin(),square.source.end()) << "." << std::endl;
 		//std::cerr << "The destination is " << CGAL::Polygon_2<K>(square.destination.begin(),square.destination.end()) << "." << std::endl;
 		square.compute_xf();
 		State state;
 		state.push_back (square);
-		// std::cerr << "Ready to fold:" << std::endl;
 		uint_fast32_t counter = 0;
 		while (fold_excess(state, hull)) {
 			++counter;
@@ -121,71 +119,74 @@ int main(int argc, char **argv) {
 	};
 
 	CGAL::Gmpq best_score = 0;
+	std::string best_solution;
+	/*
 	struct {
 		K::Vector_2 x;
 		K::Point_2 min, max;
 	} best;
+	State best_state;
 	bool exact_found = false;
 	for (auto pass : {'e', '~'}) //in first pass, look for an exact wrapping, in second pass check approximate
+	*/
+	// TODO do the exact/approximate phases
 	for (auto const &x_dir : x_dirs) {
 		assert(x_dir * x_dir == 1);
-		K::Vector_2 y_dir = x_dir.perpendicular(CGAL::COUNTERCLOCKWISE);
+		K::Vector_2 y_dir = prep(x_dir);
 
-		CGAL::Gmpq min_x = x_dir * K::Vector_2(hull[0].x(), hull[0].y());
+		CGAL::Gmpq min_x = x_dir * p2v(hull[0]);
 		CGAL::Gmpq max_x = min_x;
-		CGAL::Gmpq min_y = y_dir * K::Vector_2(hull[0].x(), hull[0].y());
+		CGAL::Gmpq min_y = y_dir * p2v(hull[0]);
 		CGAL::Gmpq max_y = min_y;
 		for (auto vi = hull.vertices_begin(); vi != hull.vertices_end(); ++vi) {
-			CGAL::Gmpq x = x_dir * (*vi - CGAL::ORIGIN);
-			CGAL::Gmpq y = y_dir * (*vi - CGAL::ORIGIN);
+			CGAL::Gmpq x = x_dir * p2v(*vi);
+			CGAL::Gmpq y = y_dir * p2v(*vi);
 			if (x < min_x) min_x = x;
 			if (x > max_x) max_x = x;
 			if (y < min_y) min_y = y;
 			if (y > max_y) max_y = y;
 		}
-		bool fits = true;
+		//bool fits = true;
 		if (max_x > min_x + 1) {
 			auto c = (max_x + min_x) / 2;
 			min_x = c - CGAL::Gmpq(1,2);
 			max_x = c + CGAL::Gmpq(1,2);
-			fits = false;
+		//	fits = false;
 		}
 		if (max_y > min_y + 1) {
 			auto c = (max_y + min_y) / 2;
 			min_y = c - CGAL::Gmpq(1,2);
 			max_y = c + CGAL::Gmpq(1,2);
-			fits = false;
+		//	fits = false;
 		}
-		if (fits) {
-			best.x = x_dir;
-			best.min = K::Point_2(min_x, min_y);
-			best.max = K::Point_2(max_x, max_y);
-			//this should be as good as it can be -- it should cover the hull.
-			exact_found = true;
-			break;
-		} else if (pass == '~') {
-			auto score = get_score(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
-			if (score > best_score) {
-				best_score = score;
-				best.x = x_dir;
-				best.min = K::Point_2(min_x, min_y);
-				best.max = K::Point_2(max_x, max_y);
+		auto score = get_score(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
+		if (score > best_score) {
+			auto state = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y));
+			std::ostringstream out;
+			state.print_solution(out);
+			std::string solution = out.str();
+			if (count_non_whitespace(solution) > solution_size_limit) {
+				std::cerr << "Found a good but long solution of length " << count_non_whitespace(solution) << "." << std::endl;
+				continue;
 			}
+			best_solution = solution;
+			if (score == 1) break;
 		}
 	}
 
+	/*
 	if (exact_found) {
 		std::cerr << "Found exact wrapping. This is as good as we can do." << std::endl;
 	} else {
 		std::cerr << "Using approximate wrapping." << std::endl;
 	}
-	State best_wrap = get_fold(best.x, best.min, best.max);
+	*/
 	if (argc == 3) {
 		std::cerr << "(Writing to " << argv[2] << ")" << std::endl;
 		std::ofstream file(argv[2]);
-		best_wrap.print_solution(file);
+		file << best_solution;
 	} else {
-		best_wrap.print_solution(std::cout);
+		std::cout << best_solution;
 	}
 
 	return 0;

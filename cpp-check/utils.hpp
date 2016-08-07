@@ -11,6 +11,21 @@ inline K::Vector_2 prep (const K::Vector_2 &vec) {
 	return vec.perpendicular(CGAL::COUNTERCLOCKWISE);
 }
 
+inline size_t count_non_whitespace (std::string &str) {
+	size_t count = 0;
+	for (auto c : str) {if (!(::isspace(c))) {count++;}}
+	return count;
+}
+
+template<typename OutputIterator>
+inline void make_square (const K::Vector_2 &x, const K::Point_2 &min, OutputIterator out) {
+	K::Vector_2 y = prep(x);
+	*(out++) = min;
+	*(out++) = min+x;
+	*(out++) = min+x+y;
+	*(out++) = min+y;
+}
+
 CGAL::Gmpq polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh);
 
 std::pair<bool, CGAL::Vector_2<K>> pythagorean_unit_approx (CGAL::Vector_2< K > const &vec);
