@@ -36,6 +36,7 @@ if __name__ == "__main__":
 	parser.add_argument("--log-errors", help="file to store solver error problem numbers", type=str, default='')
 
 
+
 	parser.add_argument("--normalize", help="call the named utility on each solution before submitting", type=str, default='')
 
 	parser.add_argument("--random", help="should the problems be shuffled?", dest='random', action='store_true')
@@ -46,6 +47,8 @@ if __name__ == "__main__":
 
 	parser.add_argument("--no-cleanup", help="delete temporary files", dest="cleanup", action='store_false')
 	parser.set_defaults(cleanup=True)
+
+	parser.add_argument("--test", help="definitely do this problem number", type=int, default=0)
 
 	args = parser.parse_args()
 
@@ -109,6 +112,9 @@ if __name__ == "__main__":
 		random.shuffle(todo)
 	if args.reverse:
 		todo.reverse()
+
+	if args.test != 0:
+		todo = [args.test]
 
 	pending = []
 
@@ -183,7 +189,7 @@ if __name__ == "__main__":
 		pending = still_pending
 		while len(pending) < args.threads and len(todo) > 0:
 			number = todo.pop(0)
-			if is_done(number): continue #check again just in case
+			if number != args.test and is_done(number): continue #check again just in case
 
 			soln_file = "TMP-soln-{}.txt".format(number)
 			try:
