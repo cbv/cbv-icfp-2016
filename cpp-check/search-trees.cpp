@@ -141,8 +141,6 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	std::string prob_name = argv[1];
-	std::string out_name = "";
-	if (argc == 3) out_name = argv[2];
 	std::unique_ptr< Problem > problem = Problem::read(prob_name);
 	if (!problem) {
 		std::cerr << "ERROR: Failed to read problem." << std::endl;
@@ -353,9 +351,7 @@ int main(int argc, char **argv) {
 		uint32_t no_face_area = 0;
 		uint32_t no_other_area = 0;
 		uint32_t out_of_box = 0;
-		uint32_t point_intersection = 0;
-		uint32_t seg_intersection = 0;
-		uint32_t poly_intersection = 0;
+		uint32_t intersection = 0;
 		uint32_t imperfect_overlap = 0;
 		uint32_t dead_ends = 0;
 		void dump() {
@@ -364,7 +360,7 @@ int main(int argc, char **argv) {
 					<< "  " << no_face_area << " didn't have area for face\n"
 					<< "  " << no_other_area << " didn't have area for unused faces\n"
 					<< "  " << out_of_box << " were out of box\n"
-					<< "  " << point_intersection << "/" << seg_intersection << "/" << poly_intersection << " intersected points/segments/polygons\n"
+					<< "  " << intersection << " intersected active edges\n"
 					<< "  " << imperfect_overlap << " exactly overlapped different edges\n"
 					<< "  " << dead_ends << " discarded dead ends\n"
 				;
@@ -372,7 +368,7 @@ int main(int argc, char **argv) {
 		}
 	} stats;
 
-	auto report = [&stats,&states,&root_key,&out_name,&prob_name](UnrollState const &end) {
+	auto report = [&stats,&states,&root_key,&argc,&argv,&prob_name](UnrollState const &end) {
 
 		stats.dump();
 		std::cerr << " ----- found solution to [" << prob_name << "]-----" << std::endl;
@@ -424,9 +420,9 @@ int main(int argc, char **argv) {
 		}
 #endif
 
-		if (out_name != "") {
-			std::cerr << "   (writing to " << out_name << ")" << std::endl;
-			solution.print_solution(out_name);
+		if (argc == 3) {
+			std::cerr << "   (writing to " << argv[2] << ")" << std::endl;
+			solution.print_solution(argv[2]);
 		} else {
 			solution.print_solution(std::cout);
 		}
@@ -538,7 +534,6 @@ int main(int argc, char **argv) {
 
 		//build active edges (and check for out-of-bounds):
 
-		CGAL::Polygon_2< K > new_poly;
 		std::vector< ActiveEdge > new_edges;
 		SearchFace const &face = faces[face_idx];
 		for (uint32_t fe = 0; fe < face.edges.size(); ++fe) {
@@ -547,8 +542,6 @@ int main(int argc, char **argv) {
 
 			K::Point_2 xa = CGAL::ORIGIN + xf[0] * a.x() + xf[1] * a.y() + xf[2];
 			K::Point_2 xb = CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2];
-
-			new_poly.push_back(xa);
 
 			if (xa.x() < 0 || xa.x() > 1
 			 || xa.y() < 0 || xa.y() > 1
@@ -614,7 +607,6 @@ int main(int argc, char **argv) {
 		ns.active_edges.clear();
 		ns.active_edges.reserve(new_edges.size() + us.active_edges.size());
 
-
 		std::vector< bool > cancel_active(us.active_edges.size(), false);
 		for (auto const &ne : new_edges) {
 			bool cancel = false;
@@ -640,12 +632,12 @@ int main(int argc, char **argv) {
 								//intersects in a single endpoint, which is fine.
 							} else {
 								//intersects at a non-endpoint point
-								++stats.point_intersection;
+								++stats.intersection;
 								return false;
 							}
 						} else {
 							//intersects in a segment
-							++stats.seg_intersection;
+							++stats.intersection;
 							return false;
 						}
 					}
@@ -655,17 +647,9 @@ int main(int argc, char **argv) {
 				ns.active_edges.emplace_back(ne);
 			}
 		}
-
-		if (new_poly.orientation() != CGAL::COUNTERCLOCKWISE) {
-			new_poly.reverse_orientation();
-		}
 		for (auto const &ae : us.active_edges) {
-			if (cancel_active[&ae - &us.active_edges[0]]) continue;
-			ns.active_edges.emplace_back(ae);
-			//any non-cancelled active edge doesn't cross the polygon boundary, so just check interior:
-			if (new_poly.oriented_side(CGAL::ORIGIN + ((ae.a - CGAL::ORIGIN) + (ae.b - CGAL::ORIGIN)) / 2) == CGAL::ON_POSITIVE_SIDE) {
-				++stats.poly_intersection;
-				return false;
+			if (!cancel_active[&ae - &us.active_edges[0]]) {
+				ns.active_edges.emplace_back(ae);
 			}
 		}
 
