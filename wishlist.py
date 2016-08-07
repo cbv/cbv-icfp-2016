@@ -22,8 +22,8 @@ def get_blob(hash):
 def get_problems():
     response = requests.get('http://2016sv.icfpcontest.org/api/snapshot/list', headers = headers)
     if response.status_code != 200:
-        print "error response"
-        print response
+        print("error response")
+        print(response)
         exit(1)
     snapshot_hash = sorted(response.json()['snapshots'], key=lambda s: -s['snapshot_time'])[0]['snapshot_hash']
     time.sleep(1)
