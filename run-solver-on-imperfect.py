@@ -27,9 +27,17 @@ if __name__ == "__main__":
 	parser.add_argument("--timeout", help="solver timeout (0 == unlimited)", type=int, default=0)
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
-	parser.add_argument("--random", help="should the problems be shuffled?", type=bool, default=False)
-	parser.add_argument("--reverse", help="should the problems be done in reverse order (largest number first)?", type=bool, default=False)
+
 	parser.add_argument("--normalize", help="call the named utility on each solution before submitting", type=str, default='')
+
+	parser.add_argument("--random", help="should the problems be shuffled?", dest='random', action='store_true')
+	parser.set_defaults(random=False)
+
+	parser.add_argument("--reverse", help="should the problems be reversed?", dest='reverse', action='store_true')
+	parser.set_defaults(reverse=False)
+
+	parser.add_argument("--no-cleanup", help="delete temporary files", dest="cleanup", action='store_false')
+	parser.set_defaults(cleanup=True)
 
 	args = parser.parse_args()
 
@@ -103,9 +111,11 @@ if __name__ == "__main__":
 						subprocess.call([args.normalize, soln_file, norm_file])
 						time.sleep(1) #rate limit
 						subprocess.call(['./reptiloid.py', str(number), norm_file])
-						os.unlink(norm_file)
+						if args.cleanup:
+							os.unlink(norm_file)
 
-					os.unlink(soln_file)
+					if args.cleanup:
+						os.unlink(soln_file)
 				else:
 					print("NO SOLUTION (" + soln_file + ")")
 		pending = still_pending

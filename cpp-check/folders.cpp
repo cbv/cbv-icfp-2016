@@ -500,25 +500,31 @@ State State::normalized() const {
 
 		//now de-duplicate anything that looks like [..., a, b, a, ...]
 
-		uint32_t s = 0;
-		while (s < merged.source.size()) {
-			assert(merged.source.size() > 3);
-			auto const &a = merged.source[s];
-			//auto const &b = merged.source[(s+1)%merged.source.size()];
-			auto const &c = merged.source[(s+2)%merged.source.size()];
-			if (a == c) {
-				uint32_t i1 = (s+1)%merged.source.size();
-				uint32_t i2 = (s+2)%merged.source.size();
-				if (i2 < i1) std::swap(i1, i2);
-				assert(i1 < i2);
-				merged.source.erase(merged.source.begin() + i2);
-				merged.source.erase(merged.source.begin() + i1);
-				if (i1 < s) s -= 1;
-				if (i2 < s) s -= 1;
-				assert(s < merged.source.size());
-			} else {
-				//go to next pattern:
-				++s;
+
+		bool removed = true;
+		while (removed) {
+			removed = false;
+			uint32_t s = 0;
+			while (s < merged.source.size()) {
+				assert(merged.source.size() > 3);
+				auto const &a = merged.source[s];
+				//auto const &b = merged.source[(s+1)%merged.source.size()];
+				auto const &c = merged.source[(s+2)%merged.source.size()];
+				if (a == c) {
+					uint32_t i1 = (s+1)%merged.source.size();
+					uint32_t i2 = (s+2)%merged.source.size();
+					if (i2 < i1) std::swap(i1, i2);
+					assert(i1 < i2);
+					merged.source.erase(merged.source.begin() + i2);
+					if (i2 < s) s -= 1;
+					merged.source.erase(merged.source.begin() + i1);
+					if (i1 < s) s -= 1;
+					assert(s < merged.source.size());
+					removed = true;
+				} else {
+					//go to next pattern:
+					++s;
+				}
 			}
 		}
 
