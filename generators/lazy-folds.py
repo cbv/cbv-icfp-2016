@@ -12,7 +12,9 @@ def rf():
 	return str(num) + '/' + str(den)
 
 #f.write('fold 0,1/2 1,1/2\n')
-f.write('fold 0,1/4 1,13/24\n')
+f.write('fold 0,11/24 1,13/24\n')
+f.write('fold 0,5/24 1,7/24\n')
+f.write('fold 0,1/24 1,3/24\n')
 
 for x in range(0,random.randint(1,15)):
 	f.write('fold ' + rf() + ',' + rf() + ' ' + rf() + ',' + rf() + '\n')
