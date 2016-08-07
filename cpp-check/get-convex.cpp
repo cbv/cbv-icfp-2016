@@ -116,7 +116,17 @@ int main(int argc, char **argv) {
 		return state;
 	};
 
-	uint32_t best_count = 999999;
+	auto output = [&argv, argc] (std::string &str) -> void {
+		if (argc == 3) {
+			std::cerr << "  (Writing to " << argv[2] << ")" << std::endl;
+			std::ofstream file(argv[2]);
+			file << str;
+		} else {
+			std::cout << str;
+		}
+	};
+
+	uint32_t best_count = UINT32_MAX;
 	CGAL::Gmpq best_score = 0;
 	std::string best_solution;
 	// TODO do the exact/approximate phases
@@ -150,7 +160,7 @@ int main(int argc, char **argv) {
 		if (score >= best_score && score > 0) {
 			if (score > best_score) {
 				best_score = score;
-				best_count = 999999;
+				best_count = UINT32_MAX;
 			}
 
 			auto state = get_fold(x_dir, K::Point_2(min_x, min_y), K::Point_2(max_x, max_y)).normalized();
@@ -173,20 +183,8 @@ int main(int argc, char **argv) {
 				std::cerr << " ~= " << std::fixed << std::setprecision(7) << score.to_double() << std::endl;
 				std::cerr << " (in " << count << " non-whitespace characters)" << std::endl;
 
-				if (score == 1) {
-					if (argc == 3) {
-						std::cerr << "  (Writing to " << argv[2] << ")" << std::endl;
-						std::ofstream file(argv[2]);
-						file << best_solution;
-					} else {
-						std::cout << best_solution;
-					}
-				} else {
-					if (argc == 3 && count <= solution_size_limit) {
-						std::cerr << "  (Writing to " << argv[2] << ")" << std::endl;
-						std::ofstream file(argv[2]);
-						file << best_solution;
-					}
+				if (score == 1 || count <= solution_size_limit) {
+					output (best_solution);
 				}
 
 				best_count = count;
@@ -194,14 +192,6 @@ int main(int argc, char **argv) {
 				if (score == 1 && count < solution_size_limit) break;
 			}
 		}
-	}
-
-	if (argc == 3) {
-		std::cerr << "(Writing to " << argv[2] << ")" << std::endl;
-		std::ofstream file(argv[2]);
-		file << best_solution;
-	} else {
-		std::cout << best_solution;
 	}
 
 	return 0;
