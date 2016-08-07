@@ -115,12 +115,14 @@ int main(int argc, char **argv) {
 		std::ostringstream out;
 		solution.print_solution(out);
 
+		//std::cerr << out.str(); //DEBUG
+
 		std::string str = out.str();
 		uint32_t count = 0;
 		for (char c : str) {
 			if (isgraph(c)) ++count;
 		}
-		//std::cerr << "Count is " << count << std::endl;
+		std::cerr << "Count is " << count << std::endl;
 		if (count < best_count) {
 			best_count = count;
 			best = str;
