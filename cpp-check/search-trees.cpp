@@ -425,7 +425,7 @@ int main(int argc, char **argv) {
 	//helper to manage expanding states:
 	auto try_adding_face = [&stats, &states, &report](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states) -> bool {
 //#define DEBUG_ADD 1
-#define DEBUG_SHOW 1
+//#define DEBUG_SHOW 1
 
 		assert(face_idx < faces.size());
 		assert(faces.size() == face_areas.size());

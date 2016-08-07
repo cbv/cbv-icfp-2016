@@ -13,7 +13,7 @@ ifeq ($(UNAME),Linux)
 	SDL_LIBS=-lSDL2 -lGL
 endif
 
-all : check get-convex foldup show
+all : check get-convex foldup show search-trees
 
 clean :
 	rm -f check get-convex foldup show search-trees get-rect

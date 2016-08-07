@@ -15,6 +15,7 @@ if __name__ == "__main__":
 	parser.add_argument("--timeout", help="solver timeout (0 == unlimited)", type=int, default=0)
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
+	parser.add_argument("--random", help="maximum problem number", type=bool, default=False)
 
 	args = parser.parse_args()
 
@@ -44,7 +45,8 @@ if __name__ == "__main__":
 	print("Of which " + str(len(todo)) + " are not perfectly solved.")
 
 	#TODO: could sort in some order, I guess
-	random.shuffle(todo)
+	if args.random:
+		random.shuffle(todo)
 
 	pending = []
 
@@ -54,6 +56,7 @@ if __name__ == "__main__":
 		for p in pending:
 			try:
 				proc.kill()
+				proc.send_signal(9)
 			except:
 				pass
 		exit(1)
@@ -61,6 +64,7 @@ if __name__ == "__main__":
 	signal.signal(signal.SIGINT, killall)
 
 	while len(todo) > 0 or len(pending) > 0:
+		print(str(len(todo)) + " remain...")
 		still_pending = []
 		for p in pending:
 			number = p[0]
@@ -72,6 +76,7 @@ if __name__ == "__main__":
 				if args.timeout != 0 and elapsed > args.timeout:
 					print("Killing " + " ".join(proc.args))
 					proc.kill()
+					proc.send_signal(9)
 				else:
 					still_pending.append( (number, soln_file, proc, elapsed) )
 			else:
