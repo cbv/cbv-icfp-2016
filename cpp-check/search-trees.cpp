@@ -485,7 +485,11 @@ int main(int argc, char **argv) {
 				show_lines.emplace_back(to_glm(xa), to_glm(xb), glm::u8vec4(0xff, 0xff, 0xff, 0x88));
 				show_lines.emplace_back(0.5f * (to_glm(xa) + to_glm(xb)), 0.5f * (to_glm(xa) + to_glm(xb)) + 0.02f * glm::normalize(to_glm(CGAL::ORIGIN + xout)), glm::u8vec4(0xff, 0xff, 0xff, 0x88));
 			}
+			#if defined(DEBUG_ADD)
+			show(show_lines);
+			#else
 			show(show_lines, false);
+			#endif
 		}
 		#endif //DEBUG_ADD
 
@@ -777,7 +781,7 @@ int main(int argc, char **argv) {
 
 				bool corner = false;
 
-				if (min_x == 0) {
+				if (min_x == dir * (a - a)) {
 					corner = true;
 					//std::cerr << "  making [a->b]" << std::endl; //DEBUG
 					
@@ -799,10 +803,13 @@ int main(int argc, char **argv) {
 					assert(feasible);
 					++seed_stats.made;
 				}
-				if (max_x == dir * (b - CGAL::ORIGIN)) {
+				if (max_x == dir * (b - a)) {
 					corner = true;
 					//flipped-direction works for this edge
 					//std::cerr << "  making [b->a]" << std::endl; //DEBUG
+					//std::cerr << "   x range " << min_x << " "  << max_x << std::endl; //DEBUG
+					//std::cerr << "   a: " << a << std::endl; //DEBUG
+					//std::cerr << "   b: " << b << std::endl; //DEBUG
 
 					K::Vector_2 to_dir(-1,0);
 					K::Vector_2 to_perp(0,1);
