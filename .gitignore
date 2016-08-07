@@ -1,5 +1,6 @@
 .*.swp
 *~
+cpp-check/normalize
 cpp-check/check
 cpp-check/show
 cpp-check/get-convex

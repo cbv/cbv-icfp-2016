@@ -14,10 +14,10 @@ ifeq ($(UNAME),Linux)
 	SDL_LIBS=-lSDL2 -lGL
 endif
 
-all : check get-convex foldup show search-trees
+all : check get-convex foldup show search-trees normalize
 
 clean :
-	rm -f check get-convex foldup show search-trees get-rect
+	rm -f check get-convex foldup show search-trees get-rect normalize
 	rm -rf objs
 
 objs :
@@ -44,3 +44,6 @@ search-trees : objs/search-trees.o objs/utils.o objs/structures.o objs/sha1.o ob
 
 show : objs/show.o objs/Viz1.o objs/utils.o objs/structures.o
 	$(CPP) $^ -o $@ -lgmp -lCGAL $(SDL_LIBS)
+
+normalize : objs/normalize.o objs/utils.o objs/structures.o objs/folders.o
+	$(CPP) $^ -o $@ -lgmp -lCGAL

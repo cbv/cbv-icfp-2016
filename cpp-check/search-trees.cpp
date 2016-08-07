@@ -138,6 +138,7 @@ std::vector< CGAL::Gmpq > face_areas;
 int main(int argc, char **argv) {
 	if (argc != 2 && argc != 3) {
 		std::cerr << "Usage:\n./search-trees <problem> [file-to-write]" << std::endl;
+		return 1;
 	}
 	std::unique_ptr< Problem > problem = Problem::read(argv[1]);
 	if (!problem) {
