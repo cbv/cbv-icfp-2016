@@ -70,7 +70,7 @@ struct UnrollState {
 	}
 };
 
-auto to_glm = [](K::Point_2 const &pt) -> glm::vec2 {
+inline glm::vec2 to_glm(K::Point_2 const &pt) {
 	return glm::vec2(CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
 };
 
