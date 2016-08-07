@@ -7,13 +7,18 @@
 
 
 inline
-glm::vec2 to_pt (K::Point_2 const &pt) {
+glm::vec2 p2vec (K::Point_2 const &pt) {
 	return glm::vec2 (CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
 }
 
 inline
 void mark_pt (K::Point_2 const &pt) {
 	glVertex2f (CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
+}
+
+inline
+void mark_pt (glm::vec2 const &pt) {
+	glVertex2f (pt.x, pt.y);
 }
 
 
@@ -39,13 +44,30 @@ void draw_poly_edges (CGAL::Polygon_2<K> const& poly, float r, float g, float b,
 }
 
 inline
-void draw_triangle_inner (K::Triangle_2 const& tri, float r, float g, float b, float a=1.0f) {
-	glBegin(GL_TRIANGLES);
-        glColor4f(r, g, b, a);
-	mark_pt(tri[0]);
-	mark_pt(tri[1]);
-	mark_pt(tri[2]);
-        glEnd();
+void draw_circle(K::Point_2 const &pt, float radius, float r, float g, float b, float a=1.0f){
+	const size_t fractions = 50;
+	glBegin(GL_TRIANGLE_FAN);
+	glColor4f(r, g, b, a);
+	auto center = p2vec(pt);
+	mark_pt(center);
+	for (size_t i = 0; i <= fractions; ++i) {
+		mark_pt(center + radius * glm::vec2(
+			cos(i * 2.0 * M_PI / fractions),
+			sin(i * 2.0 * M_PI / fractions)));
+	}
+	glEnd();
+}
+
+inline
+void draw_pt(K::Point_2 const &pt, float r, float g, float b, float a=1.0f){
+	draw_circle(pt, 0.005f, r, g, b, a);
+}
+
+inline
+void draw_poly_vertices (CGAL::Polygon_2<K> const& poly, float r, float g, float b, float a=1.0f) {
+	for (auto vi = poly.vertices_begin(); vi != poly.vertices_end(); ++vi) {
+		draw_pt(*vi, r, g, b, a);
+	}
 }
 
 typedef CGAL::Partition_traits_2< K > P;
@@ -126,12 +148,12 @@ int main(int argc, char **argv) {
 		glm::vec2 dst_max(-std::numeric_limits< float >::infinity());
 		if (solution) {
 			for (auto const &pt_ : solution->source) {
-				glm::vec2 pt = to_pt(pt_);
+				glm::vec2 pt = p2vec(pt_);
 				src_min = glm::min(src_min, pt);
 				src_max = glm::max(src_max, pt);
 			}
 			for (auto const &pt_ : solution->destination) {
-				glm::vec2 pt = to_pt(pt_);
+				glm::vec2 pt = p2vec(pt_);
 				dst_min = glm::min(dst_min, pt);
 				dst_max = glm::max(dst_max, pt);
 			}
@@ -139,14 +161,14 @@ int main(int argc, char **argv) {
 		if (problem) {
 			for (auto const &poly : problem->silhouette) {
 				for (auto const &pt_ : poly) {
-					glm::vec2 pt = to_pt(pt_);
+					glm::vec2 pt = p2vec(pt_);
 					src_min = glm::min(src_min, pt);
 					src_max = glm::max(src_max, pt);
 				}
 			}
 			for (auto const &line : problem->skeleton) {
-				glm::vec2 a = to_pt(line.first);
-				glm::vec2 b = to_pt(line.second);
+				glm::vec2 a = p2vec(line.first);
+				glm::vec2 b = p2vec(line.second);
 				src_min = glm::min(src_min, a);
 				src_min = glm::min(src_min, b);
 				src_max = glm::max(src_max, a);
@@ -182,14 +204,16 @@ int main(int argc, char **argv) {
 				poly.push_back(solution->source[i]);
 			}
 			draw_poly_edges (poly, 0., 0., 0.);
-			draw_poly_inner (poly, 0., 0., 0., 0.3);
+			draw_poly_inner (poly, 0., 0., 0., 0.1);
+			draw_poly_vertices (poly, 1., 0., 0., 0.1);
 		}
 		if (problem) {
 			for (auto const &pts : problem->silhouette) {
 				CGAL::Polygon_2<K> poly(pts.begin(), pts.end());
 				draw_poly_edges (poly, 0., 0., 0.);
 				if (poly.is_counterclockwise_oriented())
-					draw_poly_inner (poly, 0., 0., 0., 0.3);
+					draw_poly_inner (poly, 0., 0., 0., 0.1);
+				draw_poly_vertices (poly, 1., 0., 0., 0.4);
 			}
 		}
 
@@ -204,18 +228,8 @@ int main(int argc, char **argv) {
 				poly.push_back(solution->destination[i]);
 			}
 			draw_poly_edges (poly, 0., 0., 0.);
-			draw_poly_inner (poly, 0., 0., 0., 0.3);
-			glBegin(GL_LINES);
-			glColor3f(1.0f, 0.0f, 1.0f);
-			for (auto const &i : f) {
-				double x = CGAL::to_double(solution->destination[i].x());
-				double y = CGAL::to_double(solution->destination[i].y());
-				glVertex2f(x-0.1f,y-0.1f);
-				glVertex2f(x+0.1f,y+0.1f);
-				glVertex2f(x-0.1f,y+0.1f);
-				glVertex2f(x+0.1f,y-0.1f);
-			}
-			glEnd();
+			draw_poly_inner (poly, 0., 0., 0., 0.1);
+			draw_poly_vertices (poly, 1., 0., 1., 0.4);
 		}
 
 		if (problem) {
@@ -228,6 +242,7 @@ int main(int argc, char **argv) {
 				draw_poly_edges (poly, 0., 0., 0.);
 				if (poly.is_counterclockwise_oriented())
 					draw_poly_inner (poly, 0., 0., 0., 0.1);
+				draw_poly_vertices (poly, 1., 0., 0., 0.4);
 			}
 
 		}
