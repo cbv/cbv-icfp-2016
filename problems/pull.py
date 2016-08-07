@@ -30,7 +30,8 @@ for prob in get_problems():
     pid = prob['problem_id']
     filename = 'prob' + str(pid)
     if os.access(filename, os.F_OK):
-        print "Skipping problem " + str(pid)
+        pass
+        #print "Skipping problem " + str(pid)
     else:
         print "Getting problem " + str(pid)
         pblob = get_blob(prob['problem_spec_hash'])
