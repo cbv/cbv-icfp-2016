@@ -5,12 +5,12 @@ UNAME := $(shell uname)
 HEADERS := base.hpp structures.hpp utils.hpp rotations.hpp folders.hpp
 
 ifeq ($(UNAME),Darwin)
-	CPP=clang++ -std=c++11 -Wall -Werror -g -O2
+	CPP=clang++ -std=c++11 -Wall -Werror -g -O2 -DCGAL_NDEBUG=1
 	SDL_LIBS=-lSDL2 -framework OpenGL
 endif
 
 ifeq ($(UNAME),Linux)
-	CPP=g++ -std=c++11 -Wall -Werror -g -O2
+	CPP=g++ -std=c++11 -Wall -Werror -g -O2 -DCGAL_NDEBUG=1
 	SDL_LIBS=-lSDL2 -lGL
 endif
 

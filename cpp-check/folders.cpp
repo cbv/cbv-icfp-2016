@@ -506,7 +506,7 @@ State State::normalized() const {
 			removed = false;
 			uint32_t s = 0;
 			while (s < merged.source.size()) {
-				assert(merged.source.size() > 3);
+				assert(merged.source.size() >= 3);
 				auto const &a = merged.source[s];
 				//auto const &b = merged.source[(s+1)%merged.source.size()];
 				auto const &c = merged.source[(s+2)%merged.source.size()];
