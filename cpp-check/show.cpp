@@ -55,7 +55,7 @@ void draw_convex_poly_inner (P::Polygon_2 const& poly, float r, float g, float b
 	assert (poly.is_simple());
 	assert (poly.is_convex());
 	glBegin(GL_TRIANGLE_FAN);
-    glColor4f(r, g, b, a);
+	glColor4f(r, g, b, a);
 	for (auto p = poly.vertices_begin(); p != poly.vertices_end(); ++p) {
 		glVertex2f(CGAL::to_double(p->x()), CGAL::to_double(p->y()));
 	}
