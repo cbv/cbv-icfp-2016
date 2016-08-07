@@ -647,8 +647,55 @@ State State::normalized() const {
 		}
 	}
 
+	//---------- find best (8-way) orientation ----------
 
+	auto refl = [&solution](){
+		for (auto &facet : solution) {
+			for (auto &pt : facet.source) {
+				pt = K::Point_2(1 - pt.x(), pt.y());
+			}
+			facet.compute_xf();
+		}
+	};
+	auto rot90 = [&solution](){
+		for (auto &facet : solution) {
+			for (auto &pt : facet.source) {
+				pt = K::Point_2(1 - pt.y(), pt.x());
+			}
+			facet.compute_xf();
+		}
+	};
 
-	return solution;
+	
+	State best = solution;
+	uint32_t best_count = 999999;
+	auto test = [&solution, &best, &best_count]() {
+		std::ostringstream out;
+		solution.print_solution(out);
 
+		//std::cerr << out.str(); //DEBUG
+
+		std::string str = out.str();
+		uint32_t count = 0;
+		for (char c : str) {
+			if (isgraph(c)) ++count;
+		}
+		std::cerr << "Count is " << count << std::endl;
+		if (count < best_count) {
+			best_count = count;
+			best = solution;
+		}
+	};
+
+	test();
+	rot90(); test();
+	rot90(); test();
+	rot90(); test();
+	refl();
+	rot90(); test();
+	rot90(); test();
+	rot90(); test();
+	rot90(); test();
+
+	return best;
 }
