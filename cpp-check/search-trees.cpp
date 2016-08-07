@@ -423,11 +423,9 @@ int main(int argc, char **argv) {
 	};
 
 	//helper to manage expanding states:
-	auto try_adding_face = [&stats, &states, &report](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states, bool *feasible) -> bool {
+	auto try_adding_face = [&stats, &states, &report](Key const &key, UnrollState const &us, uint32_t face_idx, K::Vector_2 (&xf)[3], std::unordered_map< Key, UnrollState > *new_states) -> bool {
 //#define DEBUG_ADD 1
 #define DEBUG_SHOW 1
-
-		if (feasible) *feasible = false;
 
 		assert(face_idx < faces.size());
 		assert(faces.size() == face_areas.size());
@@ -624,29 +622,11 @@ int main(int argc, char **argv) {
 							} else {
 								//intersects at a non-endpoint point
 								++stats.intersection;
-
-								/*#ifdef DEBUG_ADD
-								auto temp_lines = show_lines;
-								temp_lines.emplace_back(to_glm(*p) + glm::vec2( 0.1f, 0.1f), to_glm(*p) + glm::vec2(-0.1f,-0.1f), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
-								temp_lines.emplace_back(to_glm(*p) + glm::vec2( 0.1f,-0.1f), to_glm(*p) + glm::vec2(-0.1f, 0.1f), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
-								show(temp_lines);
-								std::cerr << " -- isect point" << std::endl;
-								#endif //DEBUG_ADD*/
-
 								return false;
 							}
 						} else {
 							//intersects in a segment
 							++stats.intersection;
-
-							/*#ifdef DEBUG_ADD
-							auto temp_lines = show_lines;
-							temp_lines.emplace_back(to_glm(ae.a), to_glm(ae.b), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
-							temp_lines.emplace_back(to_glm(ne.a), to_glm(ne.b), glm::u8vec4(0xff, 0x00, 0x00, 0xff));
-							show(temp_lines);
-							std::cerr << " -- isect line" << std::endl;
-							#endif //DEBUG_ADD*/
-
 							return false;
 						}
 					}
@@ -662,12 +642,10 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (feasible) *feasible = true;
-	
 		Key ns_key = ns.compute_key();
 		//std::cout << ns_key << " from " << ns.source_key << std::endl; //DEBUG
 		if (!states.count(ns_key)) {
-			if (new_states->insert(std::make_pair(ns_key, ns)).second) {
+			if (!new_states || new_states->insert(std::make_pair(ns_key, ns)).second) {
 				++stats.added;
 
 				#ifdef DEBUG_ADD
@@ -682,7 +660,7 @@ int main(int argc, char **argv) {
 
 					#ifdef DEBUG_ADD
 					std::cerr << " !! solution" << std::endl;
-					show(show_lines);
+					show(show_lines, false);
 					#endif //DEBUG_ADD
 
 					report(ns);
@@ -693,14 +671,15 @@ int main(int argc, char **argv) {
 				#ifdef DEBUG_ADD
 				std::cerr << " -- not very new" << std::endl;
 				#endif //DEBUG_ADD
+				++stats.repeat;
 			}
 		} else {
 			#ifdef DEBUG_ADD
 			std::cerr << " -- not new" << std::endl;
 			#endif //DEBUG_ADD
+			++stats.repeat;
 		}
-		++stats.repeat;
-		return false;
+		return true; //still feasible if a repeat
 	};
 
 
@@ -810,8 +789,7 @@ int main(int argc, char **argv) {
 					assert(CGAL::ORIGIN + xf[0] * dir.x() + xf[1] * dir.y() == K::Point_2(1,0));
 					assert(CGAL::ORIGIN + xf[0] * perp.x() + xf[1] * perp.y() == K::Point_2(0,1));
 
-					bool feasible = false;
-					try_adding_face(root_key, root, f, xf, &states, &feasible);
+					bool feasible = try_adding_face(root_key, root, f, xf, &states);
 					assert(feasible);
 					++seed_stats.made;
 				}
@@ -830,8 +808,7 @@ int main(int argc, char **argv) {
 					xf[1] = to_dir * dir.y() + to_perp * perp.y();
 					xf[2] = to_b - (xf[0] * b.x() + xf[1] * b.y());
 
-					bool feasible = false;
-					try_adding_face(root_key, root, f, xf, &states, &feasible);
+					bool feasible = try_adding_face(root_key, root, f, xf, &states);
 					assert(feasible);
 					++seed_stats.made_flipped;
 				}
@@ -845,15 +822,35 @@ int main(int argc, char **argv) {
 		seed_stats.dump();
 	}
 
-	//TODO: consider a priority queue
-	std::multimap< double, Key > to_expand;
 
-	auto distance = [](UnrollState const &us) -> double {
+	//always expands the thing with the smallest expand value...
+	//Fill in area:
+	typedef double ExpandValue;
+	auto get_expand_value = [](UnrollState const &us) -> ExpandValue {
 		return CGAL::to_double(us.remaining_area);
 	};
+#if 0
+	//From lower left:
+	typedef std::pair< double, double > ExpandValue;
+	auto get_expand_value = [](UnrollState const &us) -> ExpandValue {
+		ExpandValue ret(1.0, 1.0);
+		auto lower = [&ret](K::Point_2 const &pt) {
+			ExpandValue val(CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
+			if (val < ret) ret = val;
+		};
+		for (auto const &ae : us.active_edges) {
+			lower(ae.a);
+			lower(ae.b);
+		}
+		return ret;
+	};
+#endif
+
+	//TODO: consider a priority queue
+	std::multimap< ExpandValue, Key > to_expand;
 	for (auto const &kv : states) {
 		assert(kv.first != root_key); //root shouldn't be in states
-		to_expand.insert(std::make_pair(distance(kv.second), kv.first));
+		to_expand.insert(std::make_pair(get_expand_value(kv.second), kv.first));
 	}
 
 
@@ -873,10 +870,34 @@ int main(int argc, char **argv) {
 		assert(states.count(key));
 		UnrollState const &us = states.find(key)->second;
 
+		if (us.active_edges.empty()) continue; //should have been report'd already?
+
 		std::unordered_map< Key, UnrollState > fresh_states;
+
+		//*check* that state is free along all edges, but only expand along *one* edge
+		ActiveEdge const *expand_edge = &(us.active_edges[0]);
+		{ //find the edge with the bottom-most left-most endpoint:
+			K::Point_2 const *low_pt = &(expand_edge->a);
+
+			auto better = [](K::Point_2 const &a, K::Point_2 const &b) {
+				if (a.y() != b.y()) return a.y() < b.y();
+				else return a.x() < b.x();
+			};
+			for (auto const &ae : us.active_edges) {
+				K::Point_2 const *edge_pt = better(ae.a, ae.b) ? &ae.a : &ae.b;
+				if (better(*edge_pt, *low_pt)) {
+					low_pt = edge_pt;
+					expand_edge = &ae;
+				}
+				//TODO: if multiple edges sort ccw or something?
+			}
+		}
 
 		//try expanding along all edges:
 		for (auto const &ae : us.active_edges) {
+
+			decltype(fresh_states) *target = (&ae == expand_edge ? &fresh_states : nullptr);
+
 			assert(ae.edge < edges.size());
 			auto const &edge = edges[ae.edge];
 
@@ -911,9 +932,7 @@ int main(int argc, char **argv) {
 				assert(CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2] == ae.b);
 				assert(CGAL::ORIGIN + xf[0] * (b + out).x() + xf[1] * (b + out).y() + xf[2] == ae.b + to_out);
 
-				bool feasible = false;
-				try_adding_face(key, us, edge.a, xf, &fresh_states, &feasible);
-				if (feasible) {
+				if (try_adding_face(key, us, edge.a, xf, target)) {
 					expanded = true;
 				}
 			}
@@ -938,9 +957,7 @@ int main(int argc, char **argv) {
 				assert(CGAL::ORIGIN + xf[0] * b.x() + xf[1] * b.y() + xf[2] == ae.b);
 				assert(CGAL::ORIGIN + xf[0] * (b + out).x() + xf[1] * (b + out).y() + xf[2] == ae.b + to_out);
 
-				bool feasible = false;
-				try_adding_face(key, us, edge.b, xf, &fresh_states, &feasible);
-				if (feasible) {
+				if (try_adding_face(key, us, edge.b, xf, target)) {
 					expanded = true;
 				}
 			}
@@ -953,7 +970,7 @@ int main(int argc, char **argv) {
 		}
 		for (auto const &kv : fresh_states) {
 			states.insert(kv);
-			to_expand.insert(std::make_pair(distance(kv.second), kv.first));
+			to_expand.insert(std::make_pair(get_expand_value(kv.second), kv.first));
 		}
 	}
 
