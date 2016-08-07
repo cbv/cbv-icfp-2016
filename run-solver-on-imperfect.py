@@ -30,6 +30,7 @@ if __name__ == "__main__":
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
 	parser.add_argument("--include", help="list of problems to include", type=str, default="")
+	parser.add_argument("--exclude", help="list of problems to exclude", type=str, default="")
 
 	parser.add_argument("--log-timeouts", help="file to store timeout problem numbers", type=str, default='')
 	parser.add_argument("--log-errors", help="file to store solver error problem numbers", type=str, default='')
@@ -74,6 +75,18 @@ if __name__ == "__main__":
 				except:
 					pass #worst file handling ever
 		print("Specifically including " + str(len(include)) + " files.")
+
+	exclude = None
+	if args.exclude:
+		exclude = set()
+		with open(args.exclude, 'r') as f:
+			for n in re.split(r'\s+', " ".join(f.readlines())):
+				try:
+					exclude.add(int(n))
+				except:
+					pass #worst file handling ever
+		print("Specifically excluding " + str(len(exclude)) + " files.")
+
 				
 
 
@@ -83,6 +96,8 @@ if __name__ == "__main__":
 		if number < args.min or number > args.max:
 			continue
 		if include is not None and number not in include:
+			continue
+		if exclude is not None and number in exclude:
 			continue
 		if not is_done(number):
 			todo.append(number)
