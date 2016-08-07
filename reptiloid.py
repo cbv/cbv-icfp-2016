@@ -80,7 +80,7 @@ if __name__ == "__main__":
     hash = hasher.hexdigest()[:16]
 
     if solution_size > 5000:
-        eprint("Solution is larger than 5000 bytes and therefore invalid.")
+        eprint("Solution has size {}, so is larger than 5000 bytes and therefore invalid.".format(solution_size))
         exit(1)
 
     solution_name = "solution_{}_{}".format(approx, hash)
