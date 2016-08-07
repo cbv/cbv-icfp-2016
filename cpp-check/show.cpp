@@ -5,6 +5,7 @@
 #include <CGAL/Triangle_2.h>
 #include <CGAL/partition_2.h>
 
+
 inline
 glm::vec2 to_pt (K::Point_2 const &pt) {
 	return glm::vec2 (CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
@@ -14,6 +15,7 @@ inline
 void mark_pt (K::Point_2 const &pt) {
 	glVertex2f (CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
 }
+
 
 inline
 void draw_segment_2pt (K::Point_2 const &pt1, K::Point_2 const &pt2, float r, float g, float b, float a=1.0f) {
@@ -46,24 +48,31 @@ void draw_triangle_inner (K::Triangle_2 const& tri, float r, float g, float b, f
         glEnd();
 }
 
+typedef CGAL::Partition_traits_2< K > P;
 inline
-void draw_convex_poly_inner (CGAL::Polygon_2<K> const& poly, float r, float g, float b, float a=1.0f) {
+void draw_convex_poly_inner (P::Polygon_2 const& poly, float r, float g, float b, float a=1.0f) {
 	assert (poly.is_counterclockwise_oriented());
 	assert (poly.is_simple());
 	assert (poly.is_convex());
-	for (size_t i = 1; i + 1 < poly.size(); i++) {
-		draw_triangle_inner (K::Triangle_2(poly[0], poly[i], poly[i+1]), r, g, b, a);
+	glBegin(GL_TRIANGLE_FAN);
+    glColor4f(r, g, b, a);
+	for (auto p = poly.vertices_begin(); p != poly.vertices_end(); ++p) {
+		glVertex2f(CGAL::to_double(p->x()), CGAL::to_double(p->y()));
 	}
+	glEnd();
 }
 
 inline
-void draw_poly_inner (CGAL::Polygon_2<K> const& poly, float r, float g, float b, float a=1.0f) {
-	assert (poly.is_counterclockwise_oriented());
+void draw_poly_inner (CGAL::Polygon_2<K> poly, float r, float g, float b, float a=1.0f) {
+	if (!poly.is_counterclockwise_oriented()) {
+		poly.reverse_orientation();
+	}
 	assert (poly.is_simple());
-	std::vector<CGAL::Polygon_2<K> > convex_partition;
-	CGAL::approx_convex_partition_2(poly.vertices_begin(),
+	std::vector< P::Polygon_2 > convex_partition;
+	CGAL::optimal_convex_partition_2(poly.vertices_begin(),
 		poly.vertices_end(),
 		std::back_inserter(convex_partition));
+	
 	for (auto const &poly : convex_partition) {
 		draw_convex_poly_inner(poly, r, g, b, a);
 	}
@@ -188,7 +197,6 @@ int main(int argc, char **argv) {
 		glScalef(2.0f / (viz.aspect * diameter), 2.0f / diameter, 1.0f);
 		glTranslatef(-0.25f * viz.aspect * diameter - 0.5f * (dst_max.x + dst_min.x), - 0.5f * (dst_max.y + dst_min.y), 0.0f);
 
-		glBegin(GL_LINES);
 		if (solution)
 		for (auto const &f : solution->facets) {
 			CGAL::Polygon_2<K> poly;
@@ -212,7 +220,6 @@ int main(int argc, char **argv) {
 			}
 
 		}
-		glEnd();
 
 	};
 	viz.run();
