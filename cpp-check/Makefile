@@ -10,7 +10,7 @@ ifeq ($(UNAME),Darwin)
 endif
 
 ifeq ($(UNAME),Linux)
-	CPP=g++ -std=c++11 -Wall -Werror -g
+	CPP=g++ -std=c++11 -Wall -Werror -g -O2
 	SDL_LIBS=-lSDL2 -lGL
 endif
 
