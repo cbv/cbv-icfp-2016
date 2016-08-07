@@ -433,9 +433,32 @@ void State::print_solution(std::ostream& out) const {
 		return str.str();
 	};
 
+	auto name = [&pp](K::Point_2 const &pt) -> std::string {
+		return pp(pt.x()) + "," + pp(pt.y());
+	};
+
 	std::unordered_map< std::string, uint32_t > source_inds;
-	std::vector< std::string > source_verts;
-	std::vector< std::string > destination_verts;
+
+	{ //assign indices by count:
+		std::unordered_map< std::string, uint32_t > source_counts;
+		for (auto const &facet : *this) {
+			for (uint_fast32_t i = 0; i < facet.source.size(); ++i) {
+				source_counts.insert(std::make_pair(name(facet.source[i]), 0)).first->second += 1;
+			}
+		}
+		std::vector< std::pair< uint32_t, std::string > > vec;
+		for (auto const &kv : source_counts) {
+			vec.emplace_back(kv.second, kv.first);
+		}
+		std::sort(vec.begin(), vec.end());
+		std::reverse(vec.begin(), vec.end());
+		for (auto const &kv : vec) {
+			source_inds[kv.second] = &kv - &vec[0];
+		}
+	}
+
+	std::vector< std::string > source_verts(source_inds.size());
+	std::vector< std::string > destination_verts(source_inds.size());
 	std::ostringstream facet_info;
 	for (auto const &facet : *this) {
 		assert(facet.source.size() == facet.destination.size());
@@ -444,15 +467,12 @@ void State::print_solution(std::ostream& out) const {
 			std::string src_name = pp(facet.source[i].x()) + "," + pp(facet.source[i].y());
 			std::string dst_name = pp(facet.destination[i].x()) + "," + pp(facet.destination[i].y());
 			uint32_t idx = source_inds.insert(std::make_pair(src_name, source_inds.size())).first->second;
-			if (idx == source_verts.size()) {
-				source_verts.emplace_back(src_name);
-				destination_verts.emplace_back(dst_name);
-			}
-			assert(source_verts.size() == destination_verts.size());
 			assert(idx < source_verts.size());
-			assert(src_name == source_verts[idx]);
+			assert(source_verts[idx] == "" || source_verts[idx] == src_name);
 			assert(idx < destination_verts.size());
-			assert(dst_name == destination_verts[idx]);
+			assert(destination_verts[idx] == "" || destination_verts[idx] == dst_name);
+			source_verts[idx] = src_name;
+			destination_verts[idx] = dst_name;
 
 			facet_info << " " << idx;
 		}

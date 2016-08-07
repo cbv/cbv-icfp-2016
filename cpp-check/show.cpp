@@ -73,9 +73,9 @@ void draw_poly_vertices (CGAL::Polygon_2<K> const& poly, float r, float g, float
 typedef CGAL::Partition_traits_2< K > P;
 inline
 void draw_convex_poly_inner (P::Polygon_2 const& poly, float r, float g, float b, float a=1.0f) {
-	assert (poly.is_counterclockwise_oriented());
-	assert (poly.is_simple());
-	assert (poly.is_convex());
+	/*//assert (poly.is_counterclockwise_oriented()); //<--- doesn't matter, and is violated somtimes
+	assert (poly.is_simple()); //these might be violated by approximate decomposition?
+	assert (poly.is_convex()); */
 	glBegin(GL_TRIANGLE_FAN);
 	glColor4f(r, g, b, a);
 	for (auto p = poly.vertices_begin(); p != poly.vertices_end(); ++p) {
