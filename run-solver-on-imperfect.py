@@ -129,10 +129,16 @@ if __name__ == "__main__":
 						time.sleep(1) #rate limit
 						subprocess.call(['./reptiloid.py', str(number), norm_file])
 						if args.cleanup:
-							os.unlink(norm_file)
+							try:
+								os.unlink(norm_file)
+							except:
+								pass
 
 					if args.cleanup:
-						os.unlink(soln_file)
+						try:
+							os.unlink(soln_file)
+						except:
+							pass
 				else:
 					print("NO SOLUTION (" + soln_file + ")")
 		pending = still_pending
