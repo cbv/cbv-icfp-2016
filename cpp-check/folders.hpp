@@ -30,4 +30,5 @@ struct State : public std::vector< Facet > {
 		std::ofstream file(filename);
 		print_solution(file);
 	}
+	State normalized() const;
 };

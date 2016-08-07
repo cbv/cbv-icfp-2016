@@ -29,6 +29,7 @@ if __name__ == "__main__":
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
 	parser.add_argument("--random", help="should the problems be shuffled?", type=bool, default=False)
 	parser.add_argument("--reverse", help="should the problems be done in reverse order (largest number first)?", type=bool, default=False)
+	parser.add_argument("--normalize", help="call the named utility on each solution before submitting", type=str, default='')
 
 	args = parser.parse_args()
 
@@ -96,7 +97,14 @@ if __name__ == "__main__":
 				if os.path.exists(soln_file):
 					print("Submitting " + soln_file)
 					subprocess.call(['./reptiloid.py', str(number), soln_file])
-					time.sleep(1) #rate limit
+					if args.normalize != '':
+						print("Normalizing and re-submitting " + soln_file)
+						norm_file = soln_file + '-norm'
+						subprocess.call([args.normalize, soln_file, norm_file])
+						time.sleep(1) #rate limit
+						subprocess.call(['./reptiloid.py', str(number), norm_file])
+						os.unlink(norm_file)
+
 					os.unlink(soln_file)
 				else:
 					print("NO SOLUTION (" + soln_file + ")")

@@ -469,3 +469,129 @@ void State::print_solution(std::ostream& out) const {
 		out << v << "\n";
 	}
 }
+
+State State::normalized() const {
+	State solution = *this;
+
+	//helper:
+	auto merge = [](Facet const &f1, uint32_t e1, Facet const &f2, uint32_t e2) -> Facet {
+		Facet merged;
+		assert(f1.xf[0] == f2.xf[0]);
+		assert(f1.xf[1] == f2.xf[1]);
+		assert(f1.xf[2] == f2.xf[2]);
+		assert(f1.flipped == f2.flipped);
+		merged.xf[0] = f1.xf[0];
+		merged.xf[1] = f1.xf[1];
+		merged.xf[2] = f1.xf[2];
+		merged.flipped = f1.flipped;
+		merged.source.reserve(f1.source.size() + f2.source.size());
+
+		uint32_t c1 = (e1 + 1) % f1.source.size();
+		while (c1 != e1) {
+			merged.source.emplace_back(f1.source[c1]);
+			c1 = (c1+1) % f1.source.size();
+		}
+
+		uint32_t c2 = (e2 + 1) % f2.source.size();
+		while (c2 != e2) {
+			merged.source.emplace_back(f2.source[c2]);
+			c2 = (c2+1) % f2.source.size();
+		}
+
+		//now de-duplicate anything that looks like [..., a, b, a, ...]
+
+		uint32_t s = 0;
+		while (s < merged.source.size()) {
+			assert(merged.source.size() > 3);
+			auto const &a = merged.source[s];
+			//auto const &b = merged.source[(s+1)%merged.source.size()];
+			auto const &c = merged.source[(s+2)%merged.source.size()];
+			if (a == c) {
+				uint32_t i1 = (s+1)%merged.source.size();
+				uint32_t i2 = (s+2)%merged.source.size();
+				if (i2 < i1) std::swap(i1, i2);
+				assert(i1 < i2);
+				merged.source.erase(merged.source.begin() + i2);
+				merged.source.erase(merged.source.begin() + i1);
+				if (i1 < s) s -= 1;
+				if (i2 < s) s -= 1;
+				assert(s < merged.source.size());
+			} else {
+				//go to next pattern:
+				++s;
+			}
+		}
+
+		merged.destination.reserve(merged.source.size());
+		for (auto const &s : merged.source) {
+			merged.destination.emplace_back( CGAL::ORIGIN + merged.xf[0] * s.x() + merged.xf[1] * s.y() + merged.xf[2] );
+		}
+
+		return merged;
+	};
+
+	//make all facets ccw:
+	uint32_t flipped = 0;
+	for (auto &f : solution) {
+		CGAL::Polygon_2< K > poly(f.source.begin(), f.source.end());
+		if (poly.orientation() != CGAL::COUNTERCLOCKWISE) {
+			++flipped;
+			std::reverse(f.source.begin(), f.source.end());
+			std::reverse(f.destination.begin(), f.destination.end());
+		}
+	}
+	std::cerr << "Flipped " << flipped << " CW facets." << std::endl;
+
+	//now merge adjacent facets with the same xf:
+	uint32_t merges = 0;
+	//(iterative quadratic all-pairs way; could use hash to make faster)
+	bool progress = true;
+	while (progress) {
+		progress = false;
+
+		for (auto const &f1 : solution) {
+			for (auto const &f2 : solution) {
+				if (&f2 >= &f1) break; //avoid doing pairs twice
+				if (f1.xf[0] != f2.xf[0]) continue; //different xform
+				if (f1.xf[1] != f2.xf[1]) continue;
+				if (f1.xf[2] != f2.xf[2]) continue;
+				//check for adjacent edge:
+				for (uint32_t e1 = 0; e1 < f1.source.size(); ++e1) {
+					auto const &a1 = f1.source[e1];
+					auto const &b1 = f1.source[(e1+1)%f1.source.size()];
+					for (uint32_t e2 = 0; e2 < f2.source.size(); ++e2) {
+						auto const &a2 = f2.source[e2];
+						auto const &b2 = f2.source[(e2+1)%f2.source.size()];
+
+						if (a1 == a2 && b1 == b2) {
+							assert(0 && "ERROR: same edge in same order in two facets.");
+						}
+						if (!(a1 == b2 && b1 == a2)) continue;
+
+						++merges;
+
+						//okay, have an edge to merge along
+						Facet new_facet = merge(f1, e1, f2, e2);
+
+						uint32_t i1 = &f1 - &solution[0];
+						uint32_t i2 = &f2 - &solution[0];
+						assert(i2 < i1);
+						solution.erase(solution.begin() + i1);
+						solution.erase(solution.begin() + i2);
+						solution.emplace_back(new_facet);
+
+						progress = true;
+						break;
+					}
+					if (progress) break;
+				}
+				if (progress) break;
+			}
+			if (progress) break;
+		}
+
+	}
+
+	return solution;
+
+}
