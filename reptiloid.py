@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import os
+import re
 import requests
 import shutil
 import subprocess
@@ -73,11 +74,12 @@ if __name__ == "__main__":
 
     # read the file and get its hash
     solution_string = open(solfile, "r").read()
+    solution_size = len(re.sub(r"\s+", "", solution_string))
     hasher = hashlib.new("sha256")
     hasher.update(solution_string.encode("utf-8"))
     hash = hasher.hexdigest()[:16]
 
-    if len(solution_string) > 5000:
+    if solution_size > 5000:
         eprint("Solution is larger than 5000 bytes and therefore invalid.")
         exit(1)
 

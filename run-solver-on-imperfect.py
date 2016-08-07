@@ -8,6 +8,18 @@ import re
 import signal
 import random
 
+def is_done(number):
+	db_dir = 'reptiloid-db/problem{0:06d}'.format(number)
+	done = False
+	try:
+		best = os.readlink(db_dir + '/best_submitted')
+		if best.startswith('solution_1.0000000'):
+			return True
+	except:
+		pass
+	return False
+
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Run a solver on every problem that hasn't been perfectly solved.")
 	parser.add_argument("solver", help="solver binary")
@@ -15,6 +27,7 @@ if __name__ == "__main__":
 	parser.add_argument("--timeout", help="solver timeout (0 == unlimited)", type=int, default=0)
 	parser.add_argument("--min", help="minimum problem number", type=int, default=0)
 	parser.add_argument("--max", help="maximum problem number", type=int, default=999999)
+	parser.add_argument("--random", help="maximum problem number", type=bool, default=False)
 
 	args = parser.parse_args()
 
@@ -31,20 +44,14 @@ if __name__ == "__main__":
 		number = int(problem_file[4:])
 		if number < args.min or number > args.max:
 			continue
-		db_dir = 'reptiloid-db/problem{0:06d}'.format(number)
-		done = False
-		try:
-			best = os.readlink(db_dir + '/best_submitted')
-			if best.startswith('solution_1.0000000'):
-				done = True
-		except:
-			pass
-		if not done:
+		if not is_done(number):
 			todo.append(number)
 	print("Of which " + str(len(todo)) + " are not perfectly solved.")
 
 	#TODO: could sort in some order, I guess
-	random.shuffle(todo)
+	todo.sort()
+	if args.random:
+		random.shuffle(todo)
 
 	pending = []
 
@@ -54,6 +61,7 @@ if __name__ == "__main__":
 		for p in pending:
 			try:
 				proc.kill()
+				proc.send_signal(9)
 			except:
 				pass
 		exit(1)
@@ -61,6 +69,7 @@ if __name__ == "__main__":
 	signal.signal(signal.SIGINT, killall)
 
 	while len(todo) > 0 or len(pending) > 0:
+		print(str(len(todo)) + " remain...")
 		still_pending = []
 		for p in pending:
 			number = p[0]
@@ -72,6 +81,7 @@ if __name__ == "__main__":
 				if args.timeout != 0 and elapsed > args.timeout:
 					print("Killing " + " ".join(proc.args))
 					proc.kill()
+					proc.send_signal(9)
 				else:
 					still_pending.append( (number, soln_file, proc, elapsed) )
 			else:
@@ -90,6 +100,8 @@ if __name__ == "__main__":
 		pending = still_pending
 		while len(pending) < args.threads and len(todo) > 0:
 			number = todo.pop(0)
+			if is_done(number): continue #check again just in case
+
 			soln_file = "TMP-soln-{}.txt".format(number)
 			cmd = [args.solver, 'problems/prob{}'.format(number), soln_file]
 			print("Launching '" + " ".join(cmd) + "'")
