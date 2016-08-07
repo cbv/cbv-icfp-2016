@@ -115,11 +115,14 @@ if __name__ == "__main__":
         response = requests.post("http://2016sv.icfpcontest.org/api/solution/submit", headers = HEADERS,
                                  data = {"problem_id": problem_number, "solution_spec": solution_string})
         eprint(response)
-        response_json = response.json()
-        eprint(response_json)
-        if response_json['ok']:
+        if response.status_code != 200:
+            eprint("Error from server.")
+            exit(1)
+        else:
+            response_json = response.json()
+            eprint(response_json)
             # update the symlink
-            tmplink = symlinkfile + ".tmp"
+            tmplink = "tmp.{}".format(int(time.time() * 10))
             os.symlink(solution_name, tmplink)
             os.rename(tmplink, symlinkfile)
             eprint("Success.")
