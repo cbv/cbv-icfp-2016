@@ -82,7 +82,7 @@ ind = 0
 for c in classes:
     have_unsolved = False
     have_solved = None
-    for pid in c:
+    for pid in classes[c]:
         if is_solved(pid):
             have_solved = pid
         else:
