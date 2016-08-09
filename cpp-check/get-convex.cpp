@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 				std::cerr << " ~= " << std::fixed << std::setprecision(7) << score.to_double() << std::endl;
 				std::cerr << " (in " << count << " non-whitespace characters)" << std::endl;
 
-				if (score == 1 || count <= solution_size_limit) {
+				if (count <= solution_size_limit) {
 					output (solution);
 				}
 
