@@ -26,10 +26,11 @@ inline size_t vector_bit_complexity (const K::Vector_2 &vec) {
 template<typename OutputIterator>
 inline void insert_square (const K::Vector_2 &x, const K::Point_2 &min, OutputIterator out) {
 	K::Vector_2 y = prep(x);
-	*(out++) = min;
-	*(out++) = min+x;
-	*(out++) = min+x+y;
-	*(out++) = min+y;
+	auto min_point = CGAL::ORIGIN + min.x() * x + min.y() * y;
+	*(out++) = min_point;
+	*(out++) = min_point+x;
+	*(out++) = min_point+x+y;
+	*(out++) = min_point+y;
 }
 
 K::FT polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh);

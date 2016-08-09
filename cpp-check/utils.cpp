@@ -37,7 +37,9 @@ std::pair<bool, CGAL::Vector_2<K>> pythagorean_unit_approx (CGAL::Vector_2< K > 
 		// exact
 		CGAL::Gmpq len (scaled_len, len2.denominator());
 		mpz_clear(scaled_len);
-		return std::make_pair(true, vec / len);
+		auto new_unit = vec / len;
+		while (new_unit.x() < 0 || new_unit.y() < 0) {new_unit = prep(new_unit);}
+		return std::make_pair(true, new_unit);
 	} else {
 		// inexact
 		mpz_clear(scaled_len);
@@ -52,8 +54,11 @@ std::pair<bool, CGAL::Vector_2<K>> pythagorean_unit_approx (CGAL::Vector_2< K > 
 		auto new_short = m*m - n*n;
 		auto new_long = 2*m*n;
 		auto new_hypo = m*m + n*n;
-		auto new_x = vec.x().sign() * (x_is_short ? new_short : new_long); 
-		auto new_y = vec.y().sign() * (x_is_short ? new_long : new_short); 
-		return std::make_pair(false, K::Vector_2(new_x, new_y, new_hypo));
+		auto new_unit = K::Vector_2(
+				vec.x().sign() * (x_is_short ? new_short : new_long),
+				vec.y().sign() * (x_is_short ? new_long : new_short)
+			) / new_hypo;
+		while (new_unit.x() < 0 || new_unit.y() < 0) {new_unit = prep(new_unit);}
+		return std::make_pair(false, new_unit);
 	}
 }
