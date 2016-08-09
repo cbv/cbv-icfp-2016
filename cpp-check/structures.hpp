@@ -14,8 +14,9 @@ struct Problem {
 
 	static std::unique_ptr< Problem > read(std::string const &filename);
 
+        K::FT get_score (const CGAL::Polygon_with_holes_2<K>&) const;
         K::FT get_score (const CGAL::Polygon_set_2<K>&) const;
-        K::FT get_score1 (const CGAL::Polygon_2<K>&) const;
+        K::FT get_score (const CGAL::Polygon_2<K>&) const;
 };
 
 struct Solution {

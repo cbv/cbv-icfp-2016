@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <CGAL/Polygon_set_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
 
 inline K::Vector_2 p2v(K::Point_2 const &p) {
@@ -31,6 +32,7 @@ inline void insert_square (const K::Vector_2 &x, const K::Point_2 &min, OutputIt
 	*(out++) = min+y;
 }
 
-CGAL::Gmpq polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh);
+K::FT polygon_with_holes_area (CGAL::Polygon_with_holes_2< K > const &pwh);
+K::FT polygon_set_area (CGAL::Polygon_set_2< K > const &ps);
 
 std::pair<bool, CGAL::Vector_2<K>> pythagorean_unit_approx (CGAL::Vector_2< K > const &vec);

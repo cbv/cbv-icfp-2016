@@ -45,8 +45,6 @@ int main(int argc, char **argv) {
 	}
 	std::cerr << "Read problem with " << problem->silhouette.size() << " silhouette polygons and " << problem->skeleton.size() << " skeleton edges." << std::endl;
 
-	//Idea: find closest bounding rectangle of silhouette, then fold that rectangle.
-
 	std::vector< K::Point_2 > points;
 	for (auto const &poly : problem->silhouette) {
 		points.insert(points.end(), poly.begin(), poly.end());
@@ -84,27 +82,43 @@ int main(int argc, char **argv) {
 		return vector_bit_complexity(a) < vector_bit_complexity(b);
 	});
 
-	auto get_score = [&hull,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
+
+	auto get_goal = [&hull](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Polygon_2<K> {
 		CGAL::Polygon_2< K > square;
+		insert_square(x, min, std::back_inserter(square));
+		CGAL::Polygon_2< K > goal;
 		{
-			insert_square(x, min, std::back_inserter(square));
-			assert(square.orientation() == CGAL::COUNTERCLOCKWISE);
+			CGAL::Polygon_set_2<K> goal_set;
+			std::list<CGAL::Polygon_with_holes_2<K> > goal_list;
+			goal_set.join(hull);
+			goal_set.intersection(square);
+			goal_set.polygons_with_holes(back_inserter(goal_list));
+			assert(goal_set.number_of_polygons_with_holes() <= 1);
+			if (goal_set.number_of_polygons_with_holes() == 0) {
+				std::cerr << "WARNING: the square (x = " << x << " and min = " << min << ") and hull do not intersect." << std::endl;
+			} else {
+				goal = goal_list.front().outer_boundary();
+			}
 		}
-		CGAL::Polygon_set_2<K> final_shape;
-		final_shape.join(hull); final_shape.intersection(square);
-		return problem->get_score(final_shape);
+		return goal;
+	};
+
+	auto get_score = [get_goal,&problem](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> CGAL::Gmpq {
+		return problem->get_score(get_goal(x, min, max));
 	};
 
 
-	auto get_fold = [&hull](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
+	auto get_fold = [get_goal](K::Vector_2 const &x, K::Point_2 const &min, K::Point_2 const &max) -> State {
 		Facet square;
 		insert_square(K::Vector_2(1,0), CGAL::ORIGIN, back_inserter(square.source));
 		insert_square(x, min, back_inserter(square.destination));
 		square.compute_xf();
 		State state;
 		state.push_back (square);
+
+		CGAL::Polygon_2<K> goal = get_goal(x, min, max);
 		uint_fast32_t counter = 0;
-		while (fold_excess(state, hull)) {
+		while (fold_excess(state, goal)) {
 			++counter;
 #ifndef NDEBUG
 			std::cerr << "Folded " << counter << " times." << std::endl;

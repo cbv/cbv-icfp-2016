@@ -81,7 +81,11 @@ std::unique_ptr< Problem > Problem::read(std::string const &filename) {
 	#undef ERROR
 }
 
-K::FT Problem::get_score1(const CGAL::Polygon_2<K>& a) const {
+K::FT Problem::get_score(const CGAL::Polygon_with_holes_2<K>& a) const {
+	return get_score(CGAL::Polygon_set_2<K>(a));
+}
+
+K::FT Problem::get_score(const CGAL::Polygon_2<K>& a) const {
 	return get_score(CGAL::Polygon_set_2<K>(a));
 }
 
@@ -90,17 +94,6 @@ K::FT Problem::get_score(const CGAL::Polygon_set_2<K>& a) const {
 	and_set.intersection(a);
 	CGAL::Polygon_set_2< K > or_set = get_silhouette();
 	or_set.join(a);
-
-	auto polygon_set_area = [](CGAL::Polygon_set_2< K > const &ps) -> CGAL::Gmpq {
-		std::list< CGAL::Polygon_with_holes_2< K > > res;
-		ps.polygons_with_holes( std::back_inserter( res ) );
-		CGAL::Gmpq ret = 0;
-		for (auto const &poly : res) {
-			ret += polygon_with_holes_area(poly);
-		}
-		assert(ret >= 0);
-		return ret;
-	};
 
 	auto and_area = polygon_set_area(and_set);
 	auto or_area = polygon_set_area(or_set);
